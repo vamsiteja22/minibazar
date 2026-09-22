@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import product_card, stars, empty_state with context %}
+
+{% block title %}{{ shop.name }} - Mini Bazaar{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.home') }}">Home</a> /
+    <a href="{{ url_for('shop.shop_list') }}">Shops</a> / <span>{{ shop.name }}</span>
+</nav>
+
+<section class="shop-hero" style="background: {{ shop_tint(shop) }}">
+    <div class="shop-hero-emoji" aria-hidden="true">🏪</div>
+    <div class="shop-hero-info">
+        <h1>{{ shop.name }}</h1>
+        {% if shop.description %}<p>{{ shop.description }}</p>{% endif %}
+        <ul class="meta-row">
+            {% if rating %}<li>{{ stars(rating[0], rating[1]) }}</li>{% endif %}
+            <li>📍 {{ shop.address }}</li>
+            {% if shop.has_location %}<li><a class="link-more" target="_blank" rel="noopener"
+                href="https://www.openstreetmap.org/?mlat={{ shop.latitude }}&amp;mlon={{ shop.longitude }}#map=16/{{ shop.latitude }}/{{ shop.longitude }}">View on map ↗</a></li>{% endif %}
+            {% if shop.phone %}<li>📞 {{ shop.phone }}</li>{% endif %}
+            <li>🛍️ {{ total_products }} product{{ '' if total_products == 1 else 's' }}</li>
+        </ul>
+    </div>
+</section>
+
+{% if categories|length > 1 %}
+<div class="chip-row" aria-label="Filter by category">
+    <a class="chip {{ 'is-active' if not active_category }}" href="{{ url_for('shop.shop_detail', shop_id=shop.id, sort=sort) }}">All</a>
+    {% for c, count in categories %}
+        <a class="chip {{ 'is-active' if active_category and active_category.id == c.id }}"
+           href="{{ url_for('shop.shop_detail', shop_id=shop.id, category=c.id, sort=sort) }}">{{ category_style(c)[0] }} {{ c.name }} ({{ count }})</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="section-header">
+    <h2>Products ({{ products|length }})</h2>
+    {% if products|length > 1 %}
+    <form method="get" class="sort-form">
+        {% if active_category %}<input type="hidden" name="category" value="{{ active_category.id }}">{% endif %}
+        <label for="sort" class="small muted">Sort by</label>
+        <select id="sort" name="sort" data-autosubmit>
+            {% for key, label in sort_options.items() %}
+                <option value="{{ key }}" {{ 'selected' if key == sort }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <noscript><button class="btn btn-small" type="submit">Apply</button></noscript>
+    </form>
+    {% endif %}
+</div>
+
+{% if products %}
+    <div class="grid grid-products">
+        {% for product in products %}{{ product_card(product) }}{% endfor %}
+    </div>
+{% else %}
+    {{ empty_state("📦", "No products to show", "This shop has not listed any products here yet. Please check back soon.") }}
+{% endif %}
+{% endblock %}

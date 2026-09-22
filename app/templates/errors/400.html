@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}Please Try Again - Mini Bazaar{% endblock %}
+
+{% block content %}
+{{ empty_state("⏳", "That page expired", "For your safety, forms stop working after a while or if the page was opened in another tab. Please go back, refresh the page and try again.", url_for('main.home'), "Back to home") }}
+{% endblock %}

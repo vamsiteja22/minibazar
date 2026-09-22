@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import product_card, section_header, order_badge, tracker with context %}
+
+{% block title %}My Dashboard - Mini Bazaar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Hi, {{ current_user.name.split()[0] }} 👋</h1>
+    <p class="muted">Here is what is happening with your orders.</p>
+</div>
+
+<div class="stat-grid">
+    <a class="stat stat-link" href="{{ url_for('customer.orders') }}"><span class="stat-number">{{ stats.active_orders }}</span><span class="muted">Active orders</span></a>
+    <a class="stat stat-link" href="{{ url_for('customer.orders') }}"><span class="stat-number">{{ stats.total_orders }}</span><span class="muted">Total orders</span></a>
+    <a class="stat stat-link" href="{{ url_for('customer.cart') }}"><span class="stat-number">{{ stats.cart_items }}</span><span class="muted">Items in cart</span></a>
+</div>
+
+{% if active_order %}
+<section class="panel active-order">
+    <div class="order-head">
+        <div>
+            <strong><a href="{{ url_for('customer.order_detail', order_id=active_order.id) }}">Order #{{ active_order.id }}</a> is in progress</strong>
+            <p class="muted small">{{ active_order.shop.name }} · {{ active_order.created_at | local_time }}</p>
+        </div>
+        {{ order_badge(active_order.status) }}
+    </div>
+    {{ tracker(steps, progress_index[active_order.status]) }}
+</section>
+{% endif %}
+
+<div class="quick-links">
+    <a class="quick-link" href="{{ url_for('shop.shop_list') }}"><span aria-hidden="true">🏪</span> Browse shops</a>
+    <a class="quick-link" href="{{ url_for('shop.product_list') }}"><span aria-hidden="true">🛍️</span> All products</a>
+    <a class="quick-link" href="{{ url_for('customer.cart') }}"><span aria-hidden="true">🛒</span> My cart</a>
+    <a class="quick-link" href="{{ url_for('customer.orders') }}"><span aria-hidden="true">📦</span> Order history</a>
+</div>
+
+{% if suggestions %}
+<section class="section-tight">
+    {{ section_header("Recommended for you", url_for('shop.product_list'), "See more") }}
+    <div class="grid grid-products">
+        {% for product in suggestions %}{{ product_card(product) }}{% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

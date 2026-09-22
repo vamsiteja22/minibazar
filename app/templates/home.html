@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import product_card, shop_card, category_card, section_header, empty_state with context %}
+
+{% block title %}Mini Bazaar - Shop from your neighbourhood{% endblock %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container hero-inner">
+        <div class="hero-text">
+            {% if shop_total %}<span class="badge badge-green">📍 {{ shop_total }} local shop{{ '' if shop_total == 1 else 's' }} on Mini Bazaar</span>{% endif %}
+            <h1>Your neighbourhood market, <span class="accent">delivered.</span></h1>
+            <p class="hero-sub">Order groceries, bakery items, dairy and more from trusted local shopkeepers - fresh, fast and close to home.</p>
+            <form class="hero-search" action="{{ url_for('shop.search') }}" method="get" role="search">
+                <label for="hero-q" class="visually-hidden">Search products and shops</label>
+                <input id="hero-q" type="search" name="q" placeholder="What are you looking for today?">
+                <button type="submit" class="btn">Search</button>
+            </form>
+            <ul class="hero-points">
+                <li>✓ Local shops you know</li>
+                <li>✓ One shop, one simple order</li>
+                <li>✓ Support your neighbours</li>
+            </ul>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+            <div class="hero-tile tile-a">🥛<span>Fresh milk</span></div>
+            <div class="hero-tile tile-b">🍞<span>Hot bread</span></div>
+            <div class="hero-tile tile-c">🥬<span>Greens</span></div>
+            <div class="hero-tile tile-d">🍅<span>Tomatoes</span></div>
+        </div>
+    </div>
+</section>
+
+{% if categories %}
+<section class="section">
+    <div class="container">
+        {{ section_header("Shop by category") }}
+        <div class="category-grid">
+            {% for category, count in categories %}{{ category_card(category, count) }}{% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if shops %}
+<section class="section section-alt">
+    <div class="container">
+        {{ section_header("Local shops", url_for('shop.shop_list'), "View all shops") }}
+        <div class="grid grid-shops">
+            {% for shop in shops %}{{ shop_card(shop, counts.get(shop.id, 0), ratings.get(shop.id)) }}{% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if popular_products %}
+<section class="section">
+    <div class="container">
+        {{ section_header("Popular products", url_for('shop.product_list'), "Browse all products") }}
+        <div class="grid grid-products">
+            {% for product in popular_products %}{{ product_card(product) }}{% endfor %}
+        </div>
+    </div>
+</section>
+{% else %}
+<section class="section">
+    <div class="container">
+        {{ empty_state("🏪", "Shops are getting ready", "Local shopkeepers are setting up their stores. Please check back soon!", url_for('auth.register', role='shopkeeper'), "Own a shop? Join us") }}
+    </div>
+</section>
+{% endif %}
+
+<section class="section section-alt" id="how-it-works">
+    <div class="container">
+        {{ section_header("How it works") }}
+        <ol class="steps">
+            <li class="step">
+                <span class="step-number">1</span>
+                <h3>Find nearby shops</h3>
+                <p class="muted">Browse local shops and products or search for exactly what you need.</p>
+            </li>
+            <li class="step">
+                <span class="step-number">2</span>
+                <h3>Add to cart &amp; checkout</h3>
+                <p class="muted">Pick your items from one shop, confirm your address and place the order.</p>
+            </li>
+            <li class="step">
+                <span class="step-number">3</span>
+                <h3>Get it delivered</h3>
+                <p class="muted">Track your order as the shopkeeper packs it and a delivery partner brings it over.</p>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="cta-band">
+            <div>
+                <h2>Own a shop or want to deliver?</h2>
+                <p>Join Mini Bazaar and reach customers in your own neighbourhood.</p>
+            </div>
+            <div class="cta-actions">
+                <a href="{{ url_for('auth.register', role='shopkeeper') }}" class="btn btn-light">Sell with us</a>
+                <a href="{{ url_for('auth.register', role='delivery_partner') }}" class="btn btn-outline-light">Deliver with us</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

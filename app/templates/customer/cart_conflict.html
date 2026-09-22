@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}One Shop at a Time - Mini Bazaar{% endblock %}
+
+{% block content %}
+<section class="panel narrow conflict">
+    <div class="empty-icon" aria-hidden="true">🛒</div>
+    <h1>Start a new cart?</h1>
+    <p>
+        Your cart already has items from <strong>{{ conflict.current_shop.name }}</strong>.
+        Each order can come from one shop only, so “{{ conflict.product.name }}” from
+        <strong>{{ conflict.product.shop.name }}</strong> can't be added to the same cart.
+    </p>
+
+    <div class="conflict-actions">
+        <form method="post" action="{{ url_for('customer.cart_replace') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="product_id" value="{{ conflict.product.id }}">
+            <input type="hidden" name="quantity" value="{{ quantity }}">
+            <button type="submit" class="btn btn-lg btn-block">Clear my cart and add “{{ conflict.product.name }}”</button>
+        </form>
+        <a href="{{ url_for('customer.cart') }}" class="btn btn-outline btn-block">Keep my cart</a>
+    </div>
+</section>
+{% endblock %}

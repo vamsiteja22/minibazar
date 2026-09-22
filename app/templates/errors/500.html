@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}Something Went Wrong - Mini Bazaar{% endblock %}
+
+{% block content %}
+{{ empty_state("🛠️", "Something went wrong on our side", "We could not complete that. Nothing was lost - please try again in a moment.", url_for('main.home'), "Back to home") }}
+{% endblock %}

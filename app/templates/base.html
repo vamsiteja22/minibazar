@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mini Bazaar - order from the local shops near you.">
+    <title>{% block title %}Mini Bazaar{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="navbar">
+        <div class="container navbar-inner">
+            <a href="{{ url_for('main.home') }}" class="brand" aria-label="Mini Bazaar home">
+                <span class="logo-mark" aria-hidden="true">🧺</span>Mini Bazaar
+            </a>
+
+            <form class="nav-search" action="{{ url_for('shop.search') }}" method="get" role="search">
+                <label for="nav-q" class="visually-hidden">Search products and shops</label>
+                <input id="nav-q" type="search" name="q" placeholder="Search milk, bread, shops…"
+                       value="{{ request.args.get('q', '') if request.endpoint == 'shop.search' else '' }}">
+                <button type="submit" class="nav-search-btn" aria-label="Search">🔍</button>
+            </form>
+
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+
+            <nav id="nav-menu" class="nav-menu" aria-label="Main">
+                <ul class="nav-links">
+                    <li><a href="{{ url_for('shop.shop_list') }}">Shops</a></li>
+                    <li><a href="{{ url_for('shop.product_list') }}">Products</a></li>
+                    {% if current_user.is_authenticated %}
+                        {% if nav_cart_count is not none %}
+                            <li>
+                                <a href="{{ url_for('customer.cart') }}">Cart
+                                    <span class="cart-badge">{{ nav_cart_count }}</span></a>
+                            </li>
+                            <li><a href="{{ url_for('customer.orders') }}">Orders</a></li>
+                        {% endif %}
+                        <li><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                        <li>
+                            <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-small btn-outline">Logout</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                        <li><a href="{{ url_for('auth.register') }}" class="btn btn-small">Sign up</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container flash-messages" role="status">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main id="main-content" class="{% block main_class %}container{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div>
+                <p class="footer-brand"><span aria-hidden="true">🧺</span> Mini Bazaar</p>
+                <p class="footer-text">Your neighbourhood market, online. Order from local shops and get it delivered fast.</p>
+            </div>
+            <div>
+                <h4>Explore</h4>
+                <ul>
+                    <li><a href="{{ url_for('shop.shop_list') }}">Nearby shops</a></li>
+                    <li><a href="{{ url_for('shop.product_list') }}">All products</a></li>
+                    <li><a href="{{ url_for('main.home') }}#how-it-works">How it works</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Account</h4>
+                <ul>
+                    <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                    <li><a href="{{ url_for('auth.register') }}">Create account</a></li>
+                    <li><a href="{{ url_for('customer.orders') }}">My orders</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Partner with us</h4>
+                <ul>
+                    <li><a href="{{ url_for('auth.register', role='shopkeeper') }}">Sell on Mini Bazaar</a></li>
+                    <li><a href="{{ url_for('auth.register', role='delivery_partner') }}">Become a delivery partner</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 Mini Bazaar. Shop local, live local.</p>
+        </div>
+    </footer>
+
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+</body>
+</html>

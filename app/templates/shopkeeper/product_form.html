@@ -1,0 +1,66 @@
+{% extends "shopkeeper/layout.html" %}
+{% from "components/macros.html" import product_thumb %}
+
+{% block title %}{{ 'Edit product' if product else 'Add product' }} - Mini Bazaar{% endblock %}
+
+{% block page %}
+<section class="panel narrow">
+    <h1>{{ 'Edit product' if product else 'Add a product' }}</h1>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="field">
+            <label for="name">Product name</label>
+            <input id="name" name="name" type="text" maxlength="120" value="{{ values.name or '' }}" required autofocus>
+        </div>
+
+        <div class="field">
+            <label for="category_id">Category</label>
+            <select id="category_id" name="category_id" required>
+                <option value="">Choose a category</option>
+                {% for c in categories %}
+                    <option value="{{ c.id }}" {{ 'selected' if (values.category_id | string) == (c.id | string) }}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="price">Price (₹)</label>
+                <input id="price" name="price" type="text" inputmode="decimal" value="{{ values.price if values.price is not none else '' }}" placeholder="e.g. 45.50" required>
+            </div>
+            <div class="field">
+                <label for="stock_quantity">Stock quantity</label>
+                <input id="stock_quantity" name="stock_quantity" type="text" inputmode="numeric" value="{{ values.stock_quantity if values.stock_quantity is not none else '' }}" required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="description">Description <span class="muted">(optional)</span></label>
+            <textarea id="description" name="description" rows="4" maxlength="1000">{{ values.description or '' }}</textarea>
+        </div>
+
+        <div class="field">
+            <label for="image">Product photo <span class="muted">(PNG, JPG, WEBP or GIF, up to 3 MB)</span></label>
+            {% if product and product.image %}
+                <div class="current-image">
+                    {{ product_thumb(product, 'lg') }}
+                    <label class="check"><input type="checkbox" name="remove_image"> Remove current photo</label>
+                </div>
+            {% endif %}
+            <input id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+        </div>
+
+        <label class="check">
+            <input type="checkbox" name="is_available" {{ 'checked' if values.is_available == 'on' }}>
+            Available for customers to order
+        </label>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">{{ 'Save changes' if product else 'Add product' }}</button>
+            <a href="{{ url_for('shopkeeper.products') }}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import tracker, order_badge %}
+
+{% block title %}Order #{{ order.id }} - Mini Bazaar{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('customer.orders') }}">My orders</a> / <span>#{{ order.id }}</span></nav>
+
+<section class="panel narrow-lg">
+    <div class="order-head">
+        <div>
+            <h1>Order #{{ order.id }}</h1>
+            <p class="muted small">Placed {{ order.created_at | local_time }} · {{ order.shop.name }}</p>
+        </div>
+        {{ order_badge(order.status) }}
+    </div>
+
+    {% if step_index is not none %}
+        {{ tracker(steps, step_index) }}
+    {% else %}
+        <p class="notice notice-warn">This order was {{ order.status | status_label | lower }}.
+            {% if order.status == 'rejected' %}The shop could not accept it.{% endif %}
+            Any items you reserved were returned to the shop's stock.</p>
+    {% endif %}
+
+    {% include "customer/_order_body.html" %}
+
+    {% for action, label in actions %}
+        <form method="post" action="{{ url_for('customer.order_cancel', order_id=order.id) }}"
+              data-confirm="Cancel order #{{ order.id }}? This cannot be undone.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger">{{ label }}</button>
+        </form>
+    {% endfor %}
+</section>
+{% endblock %}

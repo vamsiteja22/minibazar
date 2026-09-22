@@ -1,0 +1,39 @@
+{# Items, totals, address and payment of one order. Included by the confirmation and detail pages.
+   Needs: order, subtotal, delivery_fee #}
+{% from "components/macros.html" import product_thumb, delivery_panel %}
+
+{{ delivery_panel(order) }}
+
+<h2>Items</h2>
+<ul class="cart-list">
+    {% for item in order.items %}
+        <li class="line-item">
+            {{ product_thumb(item.product) }}
+            <div class="line-item-info">
+                <strong>{{ item.product.name }}</strong>
+                <p class="muted small">{{ item.price_at_purchase | inr }} each</p>
+            </div>
+            <span>× {{ item.quantity }}</span>
+            <strong>{{ (item.price_at_purchase * item.quantity) | inr }}</strong>
+        </li>
+    {% endfor %}
+</ul>
+
+<dl class="summary-list">
+    <div><dt>Subtotal</dt><dd>{{ subtotal | inr }}</dd></div>
+    <div><dt>Delivery</dt><dd>{{ 'Free' if delivery_fee == 0 else delivery_fee | inr }}</dd></div>
+    <div class="summary-total"><dt>Total</dt><dd>{{ order.total_amount | inr }}</dd></div>
+</dl>
+
+<div class="two-col spaced">
+    <div>
+        <h3>Delivering to</h3>
+        <p class="multiline">{{ order.delivery_address }}</p>
+    </div>
+    <div>
+        <h3>Payment</h3>
+        <p>Cash on delivery <span class="badge badge-muted">{{ order.payment_status | capitalize }}</span></p>
+        <h3 class="spaced">Sold by</h3>
+        <p>{{ order.shop.name }}<br><span class="muted small">{{ order.shop.address }}</span></p>
+    </div>
+</div>

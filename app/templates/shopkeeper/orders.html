@@ -1,0 +1,51 @@
+{% extends "shopkeeper/layout.html" %}
+{% from "components/macros.html" import empty_state, order_badge %}
+
+{% block title %}Orders - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header">
+    <h1>Orders</h1>
+    <p class="muted">Orders placed with your shop.</p>
+</div>
+
+<div class="chip-row" aria-label="Filter orders">
+    {% for key, (label, _statuses) in filters.items() %}
+        <a class="chip {{ 'is-active' if key == active_filter }}" href="{{ url_for('shopkeeper.orders', status=key) }}">{{ label }} ({{ counts[key] }})</a>
+    {% endfor %}
+</div>
+
+{% if orders %}
+<ul class="order-list">
+    {% for order in orders %}
+    <li class="panel order-card">
+        <div class="order-head">
+            <div>
+                <strong><a href="{{ url_for('shopkeeper.order_detail', order_id=order.id) }}">Order #{{ order.id }}</a></strong>
+                <p class="muted small">{{ order.customer.name }} · {{ order.created_at | local_time }}</p>
+            </div>
+            {{ order_badge(order.status) }}
+        </div>
+        <p class="order-items">
+            {% for item in order.items %}{{ item.quantity }} × {{ item.product.name }}{{ ', ' if not loop.last }}{% endfor %}
+        </p>
+        <div class="order-foot">
+            <strong>{{ order.total_amount | inr }}</strong>
+            <div class="row-actions">
+                {% for action, label in actions_for(order) %}
+                    <form method="post" action="{{ url_for('shopkeeper.order_action', order_id=order.id, action=action) }}" class="inline-form"
+                          {% if action == 'reject' %}data-confirm="Reject order #{{ order.id }}?"{% endif %}>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-small {{ 'btn-danger' if action == 'reject' else '' }}">{{ label }}</button>
+                    </form>
+                {% endfor %}
+                <a class="btn btn-small btn-outline" href="{{ url_for('shopkeeper.order_detail', order_id=order.id) }}">Details</a>
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+    {{ empty_state("🧾", "No orders here", "Orders in this category will show up here.", url_for('shopkeeper.orders'), "Show all orders") }}
+{% endif %}
+{% endblock %}

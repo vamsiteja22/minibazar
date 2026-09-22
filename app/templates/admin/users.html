@@ -1,0 +1,63 @@
+{% extends "admin/layout.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}Manage Users - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header">
+    <h1>Users</h1>
+    <p class="muted">Customers, shopkeepers and delivery partners. Deactivated accounts cannot log in.</p>
+</div>
+
+<div class="toolbar">
+    <div class="chip-row" aria-label="Filter by role">
+        <a class="chip {{ 'is-active' if not active_role }}" href="{{ url_for('admin.users', q=text) }}">All</a>
+        <a class="chip {{ 'is-active' if active_role == 'customer' }}" href="{{ url_for('admin.users', role='customer', q=text) }}">Customers</a>
+        <a class="chip {{ 'is-active' if active_role == 'shopkeeper' }}" href="{{ url_for('admin.users', role='shopkeeper', q=text) }}">Shopkeepers</a>
+        <a class="chip {{ 'is-active' if active_role == 'delivery_partner' }}" href="{{ url_for('admin.users', role='delivery_partner', q=text) }}">Delivery partners</a>
+    </div>
+    <form method="get" class="sort-form" role="search">
+        {% if active_role %}<input type="hidden" name="role" value="{{ active_role }}">{% endif %}
+        <label for="q" class="visually-hidden">Search users</label>
+        <input id="q" name="q" type="search" value="{{ text }}" placeholder="Name or email">
+        <button class="btn btn-small" type="submit">Search</button>
+    </form>
+</div>
+
+{% if users %}
+<div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for u in users %}
+            <tr>
+                <td><strong>{{ u.name }}</strong>{% if u.shop %}<br><span class="muted small">{{ u.shop.name }}</span>{% endif %}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.role | replace('_', ' ') | capitalize }}</td>
+                <td>{{ u.created_at | local_time }}</td>
+                <td><span class="badge {{ 'badge-green' if u.is_active else 'badge-danger' }}">{{ 'Active' if u.is_active else 'Deactivated' }}</span></td>
+                <td>
+                    {% if u.is_active %}
+                        <form method="post" action="{{ url_for('admin.user_deactivate', user_id=u.id) }}" class="inline-form"
+                              data-confirm="Deactivate {{ u.name }}? They will not be able to log in.">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="role" value="{{ active_role }}">
+                            <button type="submit" class="btn btn-small btn-danger">Deactivate</button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{{ url_for('admin.user_reactivate', user_id=u.id) }}" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="role" value="{{ active_role }}">
+                            <button type="submit" class="btn btn-small btn-outline">Reactivate</button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    {{ empty_state("👥", "No users found", "Try a different filter or search.", url_for('admin.users'), "Show everyone") }}
+{% endif %}
+{% endblock %}

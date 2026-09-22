@@ -1,0 +1,45 @@
+{% extends "admin/layout.html" %}
+{% from "components/macros.html" import empty_state, order_badge, delivery_badge %}
+
+{% block title %}All Orders - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header">
+    <h1>All orders</h1>
+    <p class="muted">Every order on the platform. Ready orders need a delivery partner.</p>
+</div>
+
+<div class="chip-row" aria-label="Filter orders">
+    {% for key, label in filters.items() %}
+        <a class="chip {{ 'is-active' if key == active_filter }}" href="{{ url_for('admin.orders', status=key) }}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if orders %}
+<div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Order</th><th>Placed</th><th>Customer</th><th>Shop</th><th>Status</th><th>Delivery</th><th>Total</th><th></th></tr></thead>
+        <tbody>
+        {% for o in orders %}
+            <tr>
+                <td><a class="link-more" href="{{ url_for('admin.order_detail', order_id=o.id) }}">#{{ o.id }}</a></td>
+                <td>{{ o.created_at | local_time }}</td>
+                <td>{{ o.customer.name }}</td>
+                <td>{{ o.shop.name }}</td>
+                <td>{{ order_badge(o.status) }}</td>
+                <td>
+                    {% if o.delivery %}{{ o.delivery.delivery_partner.name }}<br>{{ delivery_badge(o.delivery.status) }}
+                    {% elif o.status == 'ready_for_pickup' %}<span class="badge badge-warn">Needs partner</span>
+                    {% else %}<span class="muted">-</span>{% endif %}
+                </td>
+                <td>{{ o.total_amount | inr }}</td>
+                <td><a class="btn btn-small btn-outline" href="{{ url_for('admin.order_detail', order_id=o.id) }}">{{ 'Assign' if o.status == 'ready_for_pickup' and not o.delivery else 'View' }}</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    {{ empty_state("🧾", "No orders here", "Orders matching this filter will appear here.", url_for('admin.orders'), "Show all orders") }}
+{% endif %}
+{% endblock %}

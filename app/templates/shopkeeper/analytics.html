@@ -1,0 +1,82 @@
+{% extends "shopkeeper/layout.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}Sales Analytics - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header order-head">
+    <div>
+        <h1>Sales analytics</h1>
+        <p class="muted">{{ report.first_day.strftime('%d %b') }} - {{ report.last_day.strftime('%d %b %Y') }} · based on delivered orders</p>
+    </div>
+    <div class="chip-row" aria-label="Choose a period">
+        {% for option in period_options %}
+            <a class="chip {{ 'is-active' if option == days }}" href="{{ url_for('shopkeeper.analytics', days=option) }}">Last {{ option }} days</a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat"><span class="stat-number">{{ report.revenue | inr }}</span><span class="muted">Sales (goods sold)</span></div>
+    <div class="stat"><span class="stat-number">{{ report.orders }}</span><span class="muted">Delivered orders</span></div>
+    <div class="stat"><span class="stat-number">{{ report.average_order | inr }}</span><span class="muted">Average order</span></div>
+    <div class="stat"><span class="stat-number">{{ report.units }}</span><span class="muted">Items sold</span></div>
+</div>
+
+{% if not report.orders and not report.orders_placed %}
+    {{ empty_state("📈", "No orders in this period", "Your sales figures will appear here once customers start ordering.", url_for('shopkeeper.orders'), "Go to orders") }}
+{% else %}
+<section class="panel">
+    <div class="order-head">
+        <h2>Sales per day</h2>
+        {% if report.best_day %}<p class="muted small">Best day: <strong>{{ report.best_day.day.strftime('%d %b') }}</strong> · {{ report.best_day.revenue | inr }}</p>{% endif %}
+    </div>
+    <div class="bar-chart" role="img"
+         aria-label="Bar chart of daily sales for the last {{ report.days }} days. Total {{ report.revenue | inr }}.">
+        {% for point in report.series %}
+            <div class="bar-col" title="{{ point.day.strftime('%d %b') }}: {{ point.revenue | inr }} from {{ point.orders }} order{{ '' if point.orders == 1 else 's' }}">
+                <div class="bar-track"><div class="bar {{ 'is-empty' if not point.revenue }}" style="height: {{ [point.percent, 2] | max if point.revenue else 0 }}%"></div></div>
+                <span class="bar-label">{% if loop.first or loop.last or (loop.index0 % (5 if report.days <= 30 else 15) == 0 and loop.revindex0 > 2) or report.days == 7 %}{{ point.day.strftime('%d/%m') if report.days > 7 else point.day.strftime('%a') }}{% endif %}</span>
+            </div>
+        {% endfor %}
+    </div>
+    {% if not report.revenue %}<p class="muted small">No delivered orders yet in this period.</p>{% endif %}
+</section>
+
+<div class="two-col spaced">
+    <section class="panel">
+        <h2>Best-selling products</h2>
+        {% if report.top_products %}
+        <div class="table-wrap plain">
+            <table class="data-table">
+                <thead><tr><th>Product</th><th>Sold</th><th>Sales</th></tr></thead>
+                <tbody>
+                {% for p in report.top_products %}
+                    <tr><td>{{ p.name }}</td><td>{{ p.units }}</td><td>{{ p.revenue | inr }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}<p class="muted">Nothing sold yet in this period.</p>{% endif %}
+    </section>
+
+    <section class="panel">
+        <h2>Sales by category</h2>
+        {% if report.top_categories %}
+            <ul class="mini-list">
+                {% for c in report.top_categories %}
+                    <li><span>{{ c.name }}</span><strong>{{ c.revenue | inr }}</strong></li>
+                {% endfor %}
+            </ul>
+        {% else %}<p class="muted">Nothing sold yet in this period.</p>{% endif %}
+
+        <h2 class="spaced">Order results</h2>
+        <ul class="mini-list">
+            <li><span>Orders placed</span><strong>{{ report.orders_placed }}</strong></li>
+            <li><span>Delivered</span><strong>{{ report.orders }}</strong></li>
+            <li><span>Rejected or cancelled</span><strong>{{ report.closed_orders }} ({{ report.closed_percent }}%)</strong></li>
+        </ul>
+    </section>
+</div>
+{% endif %}
+{% endblock %}

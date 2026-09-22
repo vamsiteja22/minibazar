@@ -1,0 +1,26 @@
+{% extends "shopkeeper/layout.html" %}
+
+{% block title %}My Shop - Mini Bazaar{% endblock %}
+
+{% block page %}
+<section class="panel narrow">
+    <div class="order-head">
+        <h1>{{ shop.name }}</h1>
+        <a href="{{ url_for('shopkeeper.shop_edit') }}" class="btn btn-small btn-outline">Edit</a>
+    </div>
+    <p>
+        <span class="badge {{ {'approved': 'badge-green', 'pending': 'badge-muted', 'rejected': 'badge-danger'}[shop.approval_state] }}">{{ {'approved': 'Approved', 'pending': 'Awaiting approval', 'rejected': 'Rejected'}[shop.approval_state] }}</span>
+    </p>
+
+    <dl class="detail-list">
+        <div><dt>Address</dt><dd>{{ shop.address }}</dd></div>
+        <div><dt>Map location</dt><dd>{% if shop.has_location %}{{ shop.latitude }}, {{ shop.longitude }}
+            · <a class="link-more" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat={{ shop.latitude }}&amp;mlon={{ shop.longitude }}#map=16/{{ shop.latitude }}/{{ shop.longitude }}">View on map ↗</a>
+            {% else %}Not set - <a class="link-more" href="{{ url_for('shopkeeper.shop_edit') }}">add it</a> so nearby customers can find you{% endif %}</dd></div>
+        <div><dt>Phone</dt><dd>{{ shop.phone or 'Not added' }}</dd></div>
+        <div><dt>About</dt><dd>{{ shop.description or 'Not added' }}</dd></div>
+        <div><dt>Owner</dt><dd>{{ shop.owner.name }} ({{ shop.owner.email }})</dd></div>
+        <div><dt>Created</dt><dd>{{ shop.created_at | local_time }}</dd></div>
+    </dl>
+</section>
+{% endblock %}

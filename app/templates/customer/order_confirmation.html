@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import tracker, order_badge %}
+
+{% block title %}Order Placed - Mini Bazaar{% endblock %}
+
+{% block content %}
+<section class="confirm-hero">
+    <div class="confirm-check" aria-hidden="true">✓</div>
+    <h1>Thank you, {{ current_user.name.split()[0] }}! Your order is placed.</h1>
+    <p class="muted">
+        Order <strong>#{{ order.id }}</strong> has been sent to <strong>{{ order.shop.name }}</strong>.
+        They will confirm it shortly - you can follow its progress below.
+    </p>
+</section>
+
+<section class="panel narrow-lg">
+    <div class="order-head">
+        <div>
+            <h2>Order #{{ order.id }}</h2>
+            <p class="muted small">Placed {{ order.created_at | local_time }}</p>
+        </div>
+        {{ order_badge(order.status) }}
+    </div>
+
+    {{ tracker(steps, step_index) }}
+
+    {% include "customer/_order_body.html" %}
+
+    <div class="form-actions">
+        <a href="{{ url_for('customer.orders') }}" class="btn">View my orders</a>
+        <a href="{{ url_for('shop.shop_list') }}" class="btn btn-outline">Continue shopping</a>
+    </div>
+</section>
+{% endblock %}

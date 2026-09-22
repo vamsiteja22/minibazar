@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{# Shared frame for every admin page: tab bar with small "to do" badges #}
+{% block content %}
+<nav class="seller-tabs" aria-label="Administration">
+    <a href="{{ url_for('dashboard.admin') }}" class="{{ 'is-active' if request.endpoint == 'dashboard.admin' }}">📊 Dashboard</a>
+    <a href="{{ url_for('admin.users') }}" class="{{ 'is-active' if request.endpoint == 'admin.users' }}">👥 Users</a>
+    <a href="{{ url_for('admin.shops') }}" class="{{ 'is-active' if request.endpoint == 'admin.shops' }}">🏪 Shops
+        {% if todo_shops %}<span class="cart-badge">{{ todo_shops }}</span>{% endif %}</a>
+    <a href="{{ url_for('admin.categories') }}" class="{{ 'is-active' if request.endpoint == 'admin.categories' }}">🏷️ Categories</a>
+    <a href="{{ url_for('admin.orders') }}" class="{{ 'is-active' if request.endpoint in ('admin.orders', 'admin.order_detail') }}">🧾 Orders
+        {% if todo_orders %}<span class="cart-badge">{{ todo_orders }}</span>{% endif %}</a>
+    <a href="{{ url_for('admin.partners') }}" class="{{ 'is-active' if request.endpoint == 'admin.partners' }}">🚴 Delivery partners</a>
+</nav>
+{% block page %}{% endblock %}
+{% endblock %}

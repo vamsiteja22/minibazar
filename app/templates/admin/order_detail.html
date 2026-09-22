@@ -1,0 +1,86 @@
+{% extends "admin/layout.html" %}
+{% from "components/macros.html" import order_badge, delivery_badge, product_thumb, tracker %}
+
+{% block title %}Order #{{ order.id }} - Mini Bazaar{% endblock %}
+
+{% block page %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('admin.orders') }}">Orders</a> / <span>#{{ order.id }}</span></nav>
+
+<div class="checkout-layout">
+    <section class="panel">
+        <div class="order-head">
+            <div>
+                <h1>Order #{{ order.id }}</h1>
+                <p class="muted small">Placed {{ order.created_at | local_time }}</p>
+            </div>
+            {{ order_badge(order.status) }}
+        </div>
+
+        <h2>Items</h2>
+        <ul class="cart-list">
+            {% for item in order.items %}
+                <li class="line-item">
+                    {{ product_thumb(item.product) }}
+                    <div class="line-item-info"><strong>{{ item.product.name }}</strong>
+                        <p class="muted small">{{ item.price_at_purchase | inr }} each</p></div>
+                    <span>× {{ item.quantity }}</span>
+                    <strong>{{ (item.price_at_purchase * item.quantity) | inr }}</strong>
+                </li>
+            {% endfor %}
+        </ul>
+        <dl class="summary-list">
+            <div><dt>Items</dt><dd>{{ subtotal | inr }}</dd></div>
+            <div><dt>Delivery fee</dt><dd>{{ 'Free' if delivery_fee == 0 else delivery_fee | inr }}</dd></div>
+            <div class="summary-total"><dt>Customer pays</dt><dd>{{ order.total_amount | inr }}</dd></div>
+        </dl>
+
+        <div class="two-col spaced">
+            <div>
+                <h3>Customer</h3>
+                <p>{{ order.customer.name }}<br><span class="muted small">{{ order.customer.email }}</span></p>
+                <p class="multiline">{{ order.delivery_address }}</p>
+            </div>
+            <div>
+                <h3>Shop</h3>
+                <p>{{ order.shop.name }}<br><span class="muted small">{{ order.shop.address }}</span></p>
+                <h3 class="spaced">Payment</h3>
+                <p>Cash on delivery <span class="badge badge-muted">{{ order.payment_status | capitalize }}</span></p>
+            </div>
+        </div>
+    </section>
+
+    <aside class="panel summary">
+        <h2>Delivery</h2>
+        {% if order.delivery %}
+            <p><strong>{{ order.delivery.delivery_partner.name }}</strong> {{ delivery_badge(order.delivery.status) }}</p>
+            <p class="muted small">Assigned {{ order.delivery.assigned_at | local_time }}
+                {% if order.delivery.delivered_at %}<br>Delivered {{ order.delivery.delivered_at | local_time }}{% endif %}</p>
+            {{ tracker(steps, delivery_step) }}
+        {% elif order.status == 'ready_for_pickup' %}
+            <p class="notice notice-warn">This order is ready and needs a delivery partner.</p>
+        {% else %}
+            <p class="muted">A partner can be assigned once the shop marks the order “Ready for pickup”.</p>
+        {% endif %}
+
+        {% if can_assign or can_reassign %}
+            <form method="post" action="{{ url_for('admin.order_assign', order_id=order.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="field">
+                    <label for="partner_id">{{ 'Change delivery partner' if can_reassign else 'Choose a delivery partner' }}</label>
+                    <select id="partner_id" name="partner_id" required>
+                        <option value="">Select…</option>
+                        {% for partner, active in partners %}
+                            <option value="{{ partner.id }}" {{ 'disabled' if active >= max_active }}>
+                                {{ partner.name }} · {{ active }} active{{ ' (full)' if active >= max_active }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-block">{{ 'Reassign' if can_reassign else 'Assign delivery partner' }}</button>
+                {% if not partners %}<p class="small muted">No active delivery partners yet.</p>{% endif %}
+            </form>
+        {% elif order.delivery %}
+            <p class="small muted">The partner has accepted, so the assignment is locked.</p>
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}

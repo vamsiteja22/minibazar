@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import product_card, shop_card, category_card, empty_state, section_header with context %}
+
+{% block title %}{{ 'Search: ' ~ query if query else 'Search' }} - Mini Bazaar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('main.home') }}">Home</a> / <span>Search</span></nav>
+    {% if query %}
+        <h1>Results for “{{ query }}”</h1>
+        <p class="muted">{{ shops|length }} shop{{ '' if shops|length == 1 else 's' }} and {{ products|length }} product{{ '' if products|length == 1 else 's' }} found</p>
+    {% else %}
+        <h1>Search</h1>
+    {% endif %}
+</div>
+
+{% if not query %}
+    {{ empty_state("🔍", "Type something to search", "Try “milk”, “bread”, “notebook” or the name of a shop.") }}
+{% elif not shops and not products %}
+    {{ empty_state("😕", "Nothing found for “" ~ query ~ "”", "Check the spelling, try a shorter word, or browse by category below.", url_for('shop.product_list'), "Browse all products") }}
+    {% if categories %}
+    <div class="category-grid">
+        {% for category, count in categories %}{{ category_card(category, count) }}{% endfor %}
+    </div>
+    {% endif %}
+{% else %}
+    {% if shops %}
+        <section class="section-tight">
+            {{ section_header("Shops") }}
+            <div class="grid grid-shops">{% for shop in shops %}{{ shop_card(shop, counts.get(shop.id, 0), ratings.get(shop.id)) }}{% endfor %}</div>
+        </section>
+    {% endif %}
+    {% if products %}
+        <section class="section-tight">
+            {{ section_header("Products") }}
+            <div class="grid grid-products">{% for product in products %}{{ product_card(product) }}{% endfor %}</div>
+        </section>
+    {% endif %}
+{% endif %}
+{% endblock %}

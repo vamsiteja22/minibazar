@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import product_card, product_media, stars, price, section_header, empty_state with context %}
+
+{% block title %}{{ product.name }} - Mini Bazaar{% endblock %}
+
+{% block content %}
+{% set in_stock = product.stock_quantity > 0 %}
+{% set max_qty = [product.stock_quantity, 99] | min %}
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.home') }}">Home</a> /
+    {% if product.category %}<a href="{{ url_for('shop.product_list', category=product.category_id) }}">{{ product.category.name }}</a> /{% endif %}
+    <span>{{ product.name }}</span>
+</nav>
+
+<section class="product-detail">
+    <div class="product-gallery" style="background: {{ category_style(product.category)[1] }}">
+        {% if product.image %}
+            <img class="media-img" src="{{ url_for('static', filename='uploads/products/' ~ product.image) }}" alt="{{ product.name }}">
+        {% else %}
+            <span class="product-gallery-emoji" aria-hidden="true">{{ category_style(product.category)[0] }}</span>
+        {% endif %}
+    </div>
+
+    <div class="product-info">
+        <p class="small"><a href="{{ url_for('shop.shop_detail', shop_id=shop.id) }}" class="link-more">🏪 {{ shop.name }}</a></p>
+        <h1>{{ product.name }}</h1>
+        {{ stars(product.average_rating, product.review_count) }}
+
+        <div class="product-price">{{ price(product) }}</div>
+
+        {% if not in_stock %}
+            <p class="notice notice-warn">Currently out of stock.</p>
+        {% else %}
+            <p class="stock-line {{ 'is-low' if product.stock_quantity <= 10 }}">
+                {{ 'Only ' ~ product.stock_quantity ~ ' left' if product.stock_quantity <= 10 else 'In stock' }}
+            </p>
+        {% endif %}
+
+        {% if product.description %}<p class="product-desc">{{ product.description }}</p>{% endif %}
+
+        {% if current_user.is_authenticated and current_user.role == 'customer' %}
+            <form method="post" action="{{ url_for('customer.cart_add') }}" class="buy-row">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <div class="qty-stepper" data-stepper>
+                    <button type="button" data-step="-1" aria-label="Decrease quantity" {{ 'disabled' if not in_stock }}>−</button>
+                    <input type="text" name="quantity" inputmode="numeric" value="1" aria-label="Quantity" readonly data-qty data-max="{{ max_qty }}">
+                    <button type="button" data-step="1" aria-label="Increase quantity" {{ 'disabled' if not in_stock }}>+</button>
+                </div>
+                <button type="submit" class="btn btn-lg" {{ 'disabled' if not in_stock }}>{{ 'Add to cart' if in_stock else 'Out of stock' }}</button>
+            </form>
+        {% elif not current_user.is_authenticated %}
+            <div class="buy-row">
+                <a class="btn btn-lg" href="{{ url_for('auth.login', next=request.full_path) }}">Log in to add to cart</a>
+            </div>
+        {% else %}
+            <p class="notice notice-info">Only customer accounts can place orders.</p>
+        {% endif %}
+
+        <ul class="trust-list">
+            <li>🏪 Sold by {{ shop.name }}</li>
+            <li>📍 {{ shop.address }}</li>
+            <li>🧾 One shop per order keeps checkout simple</li>
+        </ul>
+    </div>
+</section>
+
+<section class="section-tight" id="reviews">
+    {{ section_header("Customer reviews") }}
+
+    {% if is_customer %}
+        {% if can_review %}
+            <form method="post" action="{{ url_for('customer.review_save', product_id=product.id) }}" class="panel review-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <h3>{{ 'Edit your review' if my_review else 'Write a review' }}</h3>
+                <fieldset class="star-picker">
+                    <legend class="small muted">Your rating</legend>
+                    <div class="stars">
+                    {% for n in [5, 4, 3, 2, 1] %}
+                        <input type="radio" id="star{{ n }}" name="rating" value="{{ n }}" {{ 'checked' if my_review and my_review.rating == n }} required>
+                        <label for="star{{ n }}" title="{{ n }} star{{ '' if n == 1 else 's' }}"><span class="visually-hidden">{{ n }} star{{ '' if n == 1 else 's' }}</span>★</label>
+                    {% endfor %}
+                    </div>
+                </fieldset>
+                <div class="field">
+                    <label for="comment">Comment <span class="muted">(optional, up to {{ max_comment }} characters)</span></label>
+                    <textarea id="comment" name="comment" rows="3" maxlength="{{ max_comment }}">{{ my_review.comment if my_review and my_review.comment else '' }}</textarea>
+                </div>
+                <button type="submit" class="btn">{{ 'Update review' if my_review else 'Post review' }}</button>
+            </form>
+        {% else %}
+            <p class="notice notice-info">You can review this product once an order containing it has been delivered to you.</p>
+        {% endif %}
+    {% endif %}
+
+    {% if reviews %}
+        <div class="reviews">
+            {% for review in reviews %}
+                <article class="review">
+                    <div class="review-head">
+                        <span class="avatar" aria-hidden="true">{{ review.customer.name[0] }}</span>
+                        <div><strong>{{ review.customer.name }}</strong>
+                            {% if my_review and review.id == my_review.id %}<span class="badge badge-green">Your review</span>{% endif %}
+                            <div class="rating-stars" aria-label="{{ review.rating }} out of 5">{{ '★' * review.rating }}{{ '☆' * (5 - review.rating) }}
+                                <span class="muted small">{{ review.created_at | local_time }}</span></div>
+                        </div>
+                    </div>
+                    {% if review.comment %}<p>{{ review.comment }}</p>{% endif %}
+                    {% if my_review and review.id == my_review.id %}
+                        <form method="post" action="{{ url_for('customer.review_delete', product_id=product.id) }}" data-confirm="Delete your review?">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="link-btn">Delete my review</button>
+                        </form>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="muted">No reviews yet.</p>
+    {% endif %}
+</section>
+
+{% if related %}
+<section class="section-tight">
+    {{ section_header("You may also like") }}
+    <div class="grid grid-products">
+        {% for item in related %}{{ product_card(item) }}{% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

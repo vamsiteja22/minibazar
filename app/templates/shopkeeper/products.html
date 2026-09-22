@@ -1,0 +1,64 @@
+{% extends "shopkeeper/layout.html" %}
+{% from "components/macros.html" import empty_state, product_thumb %}
+
+{% block title %}My Products - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header order-head">
+    <div>
+        <h1>My products</h1>
+        <p class="muted">{{ products | length }} product{{ '' if products | length == 1 else 's' }}</p>
+    </div>
+    <a href="{{ url_for('shopkeeper.product_new') }}" class="btn">➕ Add product</a>
+</div>
+
+<div class="chip-row" aria-label="Filter products">
+    <a class="chip {{ 'is-active' if not only_low }}" href="{{ url_for('shopkeeper.products') }}">All products</a>
+    <a class="chip {{ 'is-active' if only_low }}" href="{{ url_for('shopkeeper.products', stock='low') }}">⚠️ Low stock ({{ low_count }})</a>
+</div>
+
+{% if products %}
+<ul class="product-rows">
+    {% for p in products %}
+    <li class="panel product-row">
+        <div class="product-row-main">
+            {{ product_thumb(p) }}
+            <div>
+                <strong>{{ p.name }}</strong>
+                <p class="muted small">{{ p.category.name if p.category else 'No category' }}</p>
+                <p>
+                    <span class="badge {{ 'badge-green' if p.is_available else 'badge-muted' }}">{{ 'Available' if p.is_available else 'Hidden' }}</span>
+                    {% if p.stock_quantity == 0 %}<span class="badge status-cancelled">Out of stock</span>
+                    {% elif p.is_available and p.stock_quantity <= low_threshold %}<span class="badge badge-warn">Low stock</span>{% endif %}
+                </p>
+            </div>
+        </div>
+
+        <form method="post" action="{{ url_for('shopkeeper.product_quick_update', product_id=p.id) }}" class="quick-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label>Price ₹ <input name="price" type="text" inputmode="decimal" value="{{ p.price }}" aria-label="Price for {{ p.name }}"></label>
+            <label>Stock <input name="stock_quantity" type="text" inputmode="numeric" value="{{ p.stock_quantity }}" aria-label="Stock for {{ p.name }}"></label>
+            <button type="submit" class="btn btn-small">Save</button>
+        </form>
+
+        <div class="row-actions">
+            <a href="{{ url_for('shopkeeper.product_edit', product_id=p.id) }}" class="btn btn-small btn-outline">Edit</a>
+            <form method="post" action="{{ url_for('shopkeeper.product_toggle', product_id=p.id) }}" class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-small btn-outline">{{ 'Hide' if p.is_available else 'Show' }}</button>
+            </form>
+            <form method="post" action="{{ url_for('shopkeeper.product_delete', product_id=p.id) }}" class="inline-form"
+                  data-confirm="Delete “{{ p.name }}”? This cannot be undone.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-small btn-danger">Delete</button>
+            </form>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% elif only_low %}
+    {{ empty_state("✅", "Nothing is running low", "Every available product has more than " ~ low_threshold ~ " in stock.", url_for('shopkeeper.products'), "See all products") }}
+{% else %}
+    {{ empty_state("📦", "No products yet", "Add your first product so customers can start ordering.", url_for('shopkeeper.product_new'), "Add a product") }}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import product_card, empty_state with context %}
+
+{% block title %}{{ active_category.name if active_category else 'All Products' }} - Mini Bazaar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('main.home') }}">Home</a> / <span>Products</span></nav>
+    <h1>{{ active_category.name if active_category else 'All products' }}</h1>
+    <p class="muted">{{ products|length }} item{{ '' if products|length == 1 else 's' }}</p>
+</div>
+
+<div class="toolbar">
+    <div class="chip-row" aria-label="Filter by category">
+        <a class="chip {{ 'is-active' if not active_category }}" href="{{ url_for('shop.product_list', sort=sort) }}">All</a>
+        {% for c, count in categories %}
+            <a class="chip {{ 'is-active' if active_category and active_category.id == c.id }}"
+               href="{{ url_for('shop.product_list', category=c.id, sort=sort) }}">{{ category_style(c)[0] }} {{ c.name }}</a>
+        {% endfor %}
+    </div>
+    <form method="get" class="sort-form">
+        {% if active_category %}<input type="hidden" name="category" value="{{ active_category.id }}">{% endif %}
+        <label for="sort" class="small muted">Sort by</label>
+        <select id="sort" name="sort" data-autosubmit>
+            {% for key, label in sort_options.items() %}
+                <option value="{{ key }}" {{ 'selected' if key == sort }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <noscript><button class="btn btn-small" type="submit">Apply</button></noscript>
+    </form>
+</div>
+
+{% if products %}
+    <div class="grid grid-products">
+        {% for product in products %}{{ product_card(product) }}{% endfor %}
+    </div>
+{% elif active_category %}
+    {{ empty_state("🛍️", "Nothing here yet", "No products in this category right now.", url_for('shop.product_list'), "Clear filter") }}
+{% else %}
+    {{ empty_state("🛍️", "No products yet", "Shops are still adding their products. Please check back soon.") }}
+{% endif %}
+{% endblock %}

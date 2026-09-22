@@ -1,0 +1,60 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Admin Dashboard - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header">
+    <h1>Platform overview</h1>
+    <p class="muted">Everything happening on Mini Bazaar right now.</p>
+</div>
+
+<div class="stat-grid">
+    <a class="stat stat-link" href="{{ url_for('admin.users') }}"><span class="stat-number">{{ stats.users_total }}</span><span class="muted">Total users</span></a>
+    <a class="stat stat-link" href="{{ url_for('admin.shops', state='all') }}"><span class="stat-number">{{ stats.shops_total }}</span><span class="muted">Total shops</span></a>
+    <div class="stat"><span class="stat-number">{{ stats.products_total }}</span><span class="muted">Total products</span></div>
+    <a class="stat stat-link" href="{{ url_for('admin.orders') }}"><span class="stat-number">{{ stats.orders_total }}</span><span class="muted">Total orders</span></a>
+</div>
+
+<section class="panel attention">
+    <h2>Needs your attention</h2>
+    <ul class="mini-list">
+        <li><span>🏪 Shops waiting for approval</span>
+            <a class="link-more" href="{{ url_for('admin.shops', state='pending') }}"><strong>{{ stats.shops_pending }}</strong> →</a></li>
+        <li><span>📦 Orders ready for pickup with no delivery partner</span>
+            <a class="link-more" href="{{ url_for('admin.orders', status='needs_partner') }}"><strong>{{ stats.needs_partner }}</strong> →</a></li>
+        <li><span>🚴 Deliveries in progress</span>
+            <a class="link-more" href="{{ url_for('admin.partners') }}"><strong>{{ stats.deliveries_active }}</strong> →</a></li>
+    </ul>
+</section>
+
+<div class="two-col spaced">
+    <section class="panel">
+        <h2>People</h2>
+        <ul class="mini-list">
+            <li><span>Customers</span><strong>{{ stats.customers }}</strong></li>
+            <li><span>Shopkeepers</span><strong>{{ stats.shopkeepers }}</strong></li>
+            <li><span>Delivery partners</span><strong>{{ stats.partners }}</strong></li>
+            <li><span>Admins</span><strong>{{ stats.admins }}</strong></li>
+        </ul>
+        <h2 class="spaced">Shops and products</h2>
+        <ul class="mini-list">
+            <li><span>Approved shops</span><strong>{{ stats.shops_approved }}</strong></li>
+            <li><span>Waiting for approval</span><strong>{{ stats.shops_pending }}</strong></li>
+            <li><span>Rejected</span><strong>{{ stats.shops_rejected }}</strong></li>
+            <li><span>Available products</span><strong>{{ stats.products_available }} of {{ stats.products_total }}</strong></li>
+        </ul>
+    </section>
+
+    <section class="panel">
+        <h2>Orders by status</h2>
+        <ul class="mini-list">
+            {% for status, count in stats.orders_by_status.items() %}
+                <li><span class="badge status-{{ status }}">{{ status_labels[status] }}</span><strong>{{ count }}</strong></li>
+            {% endfor %}
+        </ul>
+        <h2 class="spaced">Sales</h2>
+        <p class="stat-number">{{ stats.delivered_sales | inr }}</p>
+        <p class="muted small">Value of goods in delivered orders (delivery fees not included).</p>
+    </section>
+</div>
+{% endblock %}

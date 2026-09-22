@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}Access Denied - Mini Bazaar{% endblock %}
+
+{% block content %}
+{{ empty_state("🔒", "403 - Access denied", "You do not have permission to open this page.", url_for('dashboard.index'), "Go to my dashboard") }}
+{% endblock %}

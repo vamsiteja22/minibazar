@@ -1,0 +1,49 @@
+{% extends "admin/layout.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}Delivery Partners - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header">
+    <h1>Delivery partners</h1>
+    <p class="muted">Partners can hold up to {{ max_active }} active deliveries at a time. Orders are assigned from the order page.</p>
+</div>
+
+{% if rows %}
+<div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Active deliveries</th><th>Delivered</th><th></th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            {% set p = row.partner %}
+            <tr>
+                <td><strong>{{ p.name }}</strong></td>
+                <td>{{ p.email }}</td>
+                <td><span class="badge {{ 'badge-green' if p.is_active else 'badge-danger' }}">{{ 'Active' if p.is_active else 'Deactivated' }}</span></td>
+                <td>{{ row.active }} / {{ max_active }}</td>
+                <td>{{ row.delivered }}</td>
+                <td>
+                    {% if p.is_active %}
+                        <form method="post" action="{{ url_for('admin.user_deactivate', user_id=p.id) }}" class="inline-form"
+                              data-confirm="Deactivate {{ p.name }}? They will not be able to log in.">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="role" value="delivery_partner">
+                            <button type="submit" class="btn btn-small btn-danger">Deactivate</button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{{ url_for('admin.user_reactivate', user_id=p.id) }}" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="role" value="delivery_partner">
+                            <button type="submit" class="btn btn-small btn-outline">Reactivate</button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    {{ empty_state("🚴", "No delivery partners yet", "People can sign up as a delivery partner from the Register page.") }}
+{% endif %}
+{% endblock %}

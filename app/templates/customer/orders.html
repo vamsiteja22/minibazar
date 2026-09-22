@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import empty_state, order_badge, tracker %}
+
+{% block title %}My Orders - Mini Bazaar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My orders</h1>
+    <p class="muted">Track current orders and see what you bought before.</p>
+</div>
+
+{% if orders %}
+    <ul class="order-list">
+        {% for order in orders %}
+        <li class="panel order-card">
+            <div class="order-head">
+                <div>
+                    <strong><a href="{{ url_for('customer.order_detail', order_id=order.id) }}">Order #{{ order.id }}</a></strong>
+                    <p class="muted small">{{ order.created_at | local_time }} · {{ order.shop.name }}</p>
+                </div>
+                {{ order_badge(order.status) }}
+            </div>
+
+            <p class="order-items">
+                {% for item in order.items %}{{ item.quantity }} × {{ item.product.name }}{{ ', ' if not loop.last }}{% endfor %}
+            </p>
+
+            {% if progress_index.get(order.status) is not none and order.status != 'delivered' %}
+                {{ tracker(steps, progress_index[order.status]) }}
+            {% endif %}
+
+            <div class="order-foot">
+                <strong>{{ order.total_amount | inr }}</strong>
+                <a class="btn btn-small btn-outline" href="{{ url_for('customer.order_detail', order_id=order.id) }}">View details</a>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    {{ empty_state("📦", "No orders yet", "When you place an order it will show up here.", url_for('shop.shop_list'), "Find a shop") }}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import shop_card, empty_state with context %}
+
+{% block title %}Local Shops - Mini Bazaar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('main.home') }}">Home</a> / <span>Shops</span></nav>
+    <h1>
+        {% if nearby %}Shops within {{ nearby.radius }} km of you
+        {% elif active_category %}Shops selling {{ active_category.name }}
+        {% else %}Local shops{% endif %}
+    </h1>
+    <p class="muted">{{ shops|length }} shop{{ '' if shops|length == 1 else 's' }}{% if nearby %}, nearest first{% endif %}</p>
+</div>
+
+<section class="panel nearby-panel" aria-label="Find shops near you">
+    <form method="get" action="{{ url_for('shop.shop_list') }}" id="nearby-form" class="nearby-form">
+        {% if active_category %}<input type="hidden" name="category" value="{{ active_category.id }}">{% endif %}
+        <div class="nearby-row">
+            <label for="radius">📍 Shops within</label>
+            <select id="radius" name="radius">
+                {% for km in radius_options %}
+                    <option value="{{ km }}" {{ 'selected' if (nearby.radius if nearby else 5) == km }}>{{ km }} km</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn" data-geolocate data-form="nearby-form" data-lat="nearby-lat" data-lng="nearby-lng" data-submit="true">Use my location</button>
+            {% if nearby %}<a class="btn btn-outline" href="{{ url_for('shop.shop_list', category=active_category.id if active_category else none) }}">Show all shops</a>{% endif %}
+        </div>
+        <details {{ 'open' if location_error or nearby }}>
+            <summary class="small muted">Or enter a location by hand</summary>
+            <div class="nearby-row">
+                <label class="visually-hidden" for="nearby-lat">Latitude</label>
+                <input id="nearby-lat" name="lat" type="text" inputmode="decimal" placeholder="Latitude, e.g. 17.3850" value="{{ typed_lat }}">
+                <label class="visually-hidden" for="nearby-lng">Longitude</label>
+                <input id="nearby-lng" name="lng" type="text" inputmode="decimal" placeholder="Longitude, e.g. 78.4867" value="{{ typed_lng }}">
+                <button type="submit" class="btn btn-outline">Search nearby</button>
+            </div>
+        </details>
+        <p class="small muted">Your location is used only to work out distances. It is not saved.</p>
+    </form>
+    {% if location_error %}<p class="field-error" role="alert">{{ location_error }}</p>{% endif %}
+</section>
+
+{% if categories %}
+<div class="chip-row" aria-label="Filter by category">
+    <a class="chip {{ 'is-active' if not active_category }}"
+       href="{{ url_for('shop.shop_list', lat=nearby.lat if nearby else none, lng=nearby.lng if nearby else none, radius=nearby.radius if nearby else none) }}">All</a>
+    {% for c, count in categories %}
+        <a class="chip {{ 'is-active' if active_category and active_category.id == c.id }}"
+           href="{{ url_for('shop.shop_list', category=c.id, lat=nearby.lat if nearby else none, lng=nearby.lng if nearby else none, radius=nearby.radius if nearby else none) }}">{{ category_style(c)[0] }} {{ c.name }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if without_location and nearby %}
+    <p class="notice notice-info">{{ without_location }} other shop{{ '' if without_location == 1 else 's' }} {{ 'has' if without_location == 1 else 'have' }} not shared a location yet, so {{ 'it is' if without_location == 1 else 'they are' }} not shown here.</p>
+{% endif %}
+
+{% if shops %}
+    <div class="grid grid-shops">
+        {% for shop in shops %}
+            {{ shop_card(shop, counts.get(shop.id, 0), ratings.get(shop.id), format_distance(distances[shop.id]) if shop.id in distances else none) }}
+        {% endfor %}
+    </div>
+{% elif nearby %}
+    {{ empty_state("📍", "No shops within " ~ nearby.radius ~ " km", "Try a larger distance, or show all shops.", url_for('shop.shop_list'), "Show all shops") }}
+{% elif active_category %}
+    {{ empty_state("🏪", "No shops sell this yet", "Try another category.", url_for('shop.shop_list'), "See all shops") }}
+{% else %}
+    {{ empty_state("🏪", "No shops yet", "Local shops are joining soon. Please check back later.") }}
+{% endif %}
+{% endblock %}

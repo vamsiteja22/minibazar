@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Mini Bazaar{% endblock %}
+
+{% block content %}
+<section class="form-card">
+    <h1>Login</h1>
+    <form method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ request.form.get('email', '') }}" required autofocus>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit" class="btn btn-block">Login</button>
+    </form>
+    <p class="form-note">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+</section>
+{% endblock %}

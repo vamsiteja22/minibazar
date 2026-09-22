@@ -1,0 +1,18 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+instance/
+*.db
+.vscode/
+.idea/
+
+# uploaded product images (keep the folder, ignore the files)
+app/static/uploads/products/*
+!app/static/uploads/products/.gitkeep
+
+# secrets and local data must never be committed
+.env
+*.sqlite3
+.kilo/

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Mini Bazaar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('customer.cart') }}">Cart</a> / <span>Checkout</span></nav>
+    <h1>Checkout</h1>
+</div>
+
+<div class="checkout-layout">
+    <form class="panel" id="checkout-form" method="post" action="{{ url_for('customer.checkout') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {# The total the customer is looking at. The server only uses it to notice price changes. #}
+        <input type="hidden" name="expected_total" value="{{ cart.total }}">
+
+        <h2>Delivery details</h2>
+
+        <div class="field">
+            <label for="full_name">Full name</label>
+            <input id="full_name" name="full_name" type="text" maxlength="50" autocomplete="name" value="{{ values.full_name or '' }}" required>
+            <p class="field-error" data-error-for="full_name" hidden></p>
+        </div>
+
+        <div class="field">
+            <label for="phone">Phone number</label>
+            <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number" value="{{ values.phone or '' }}" required>
+            <p class="field-error" data-error-for="phone" hidden></p>
+        </div>
+
+        <div class="field">
+            <label for="address">Delivery address</label>
+            <textarea id="address" name="address" rows="3" maxlength="110" autocomplete="street-address" placeholder="House no., street, area, landmark" required>{{ values.address or '' }}</textarea>
+            <p class="field-error" data-error-for="address" hidden></p>
+        </div>
+
+        <div class="field">
+            <label for="notes">Delivery instructions <span class="muted">(optional)</span></label>
+            <input id="notes" name="notes" type="text" maxlength="50" placeholder="e.g. Ring the bell twice" value="{{ values.notes or '' }}">
+        </div>
+
+        <h2>Payment</h2>
+        <fieldset class="pay-options">
+            <legend class="visually-hidden">Payment method</legend>
+            <label class="pay-option is-selected">
+                <input type="radio" name="payment" value="cod" checked>
+                <span><strong>Cash on delivery</strong><br><span class="muted small">Pay when your order arrives</span></span>
+            </label>
+            <label class="pay-option is-disabled">
+                <input type="radio" name="payment" value="online" disabled>
+                <span><strong>Online payment</strong> <span class="badge badge-muted">Coming soon</span></span>
+            </label>
+        </fieldset>
+
+        <button type="submit" class="btn btn-lg btn-block" id="place-order">Place order · {{ cart.total | inr }}</button>
+        <p class="small muted center">The shop will confirm your order after you place it.</p>
+    </form>
+
+    <aside class="panel summary" aria-label="Order summary">
+        <h2>Your order</h2>
+        <p class="muted small">From {{ cart.shop.name }}</p>
+        <ul class="mini-list">
+            {% for line in cart.lines %}
+                <li><span>{{ line.quantity }} × {{ line.product.name }}</span><span>{{ line.line_total | inr }}</span></li>
+            {% endfor %}
+        </ul>
+        <dl class="summary-list">
+            <div><dt>Subtotal</dt><dd>{{ cart.subtotal | inr }}</dd></div>
+            <div><dt>Delivery</dt><dd>{{ 'Free' if cart.delivery_fee == 0 else cart.delivery_fee | inr }}</dd></div>
+            <div class="summary-total"><dt>Total</dt><dd>{{ cart.total | inr }}</dd></div>
+        </dl>
+        <a href="{{ url_for('customer.cart') }}" class="link-more small">← Edit cart</a>
+    </aside>
+</div>
+{% endblock %}

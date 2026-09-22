@@ -1,0 +1,162 @@
+{# Reusable UI pieces. Import in a page with:
+   {% from "components/macros.html" import product_card, shop_card with context %}
+   ("with context" lets the macros see current_user and request.) #}
+
+{% macro stars(rating, reviews=None) %}
+    {% if rating is none %}
+        <span class="rating muted small">No reviews yet</span>
+    {% else %}
+        <span class="rating" aria-label="Rated {{ '%.1f' % rating }} out of 5">
+            <span class="rating-star" aria-hidden="true">★</span>
+            <strong>{{ '%.1f' % rating }}</strong>
+            {% if reviews is not none %}<span class="muted">({{ reviews }})</span>{% endif %}
+        </span>
+    {% endif %}
+{% endmacro %}
+
+{% macro price(product) %}
+    <span class="price"><span class="price-now">{{ product.price | inr }}</span></span>
+{% endmacro %}
+
+{# Product photo if there is one, otherwise a category emoji on a coloured panel #}
+{% macro product_media(product) %}
+    {% if product.image %}
+        <img class="media-img" src="{{ url_for('static', filename='uploads/products/' ~ product.image) }}" alt="{{ product.name }}" loading="lazy">
+    {% else %}
+        <span class="card-emoji" aria-hidden="true">{{ category_style(product.category)[0] }}</span>
+    {% endif %}
+{% endmacro %}
+
+{# The right "Add" control for whoever is looking: visitor, customer, or another role #}
+{% macro card_add(product) %}
+    {% if product.stock_quantity <= 0 %}
+        <button class="btn btn-small" type="button" disabled>Sold out</button>
+    {% elif not current_user.is_authenticated %}
+        <a class="btn btn-small" href="{{ url_for('auth.login', next=request.full_path) }}">Add</a>
+    {% elif current_user.role == 'customer' %}
+        <form method="post" action="{{ url_for('customer.cart_add') }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <input type="hidden" name="next" value="{{ request.full_path }}">
+            <button class="btn btn-small" type="submit" aria-label="Add {{ product.name }} to cart">Add</button>
+        </form>
+    {% else %}
+        <button class="btn btn-small" type="button" disabled title="Only customers can order">Add</button>
+    {% endif %}
+{% endmacro %}
+
+{% macro product_card(product) %}
+<article class="card product-card">
+    <a class="card-media" href="{{ url_for('shop.product_detail', product_id=product.id) }}"
+       style="background: {{ category_style(product.category)[1] }}" aria-label="View {{ product.name }}">
+        {{ product_media(product) }}
+        {% if product.stock_quantity <= 0 %}
+            <span class="badge badge-muted card-badge">Out of stock</span>
+        {% elif product.stock_quantity <= 5 %}
+            <span class="badge badge-warn card-badge">Only {{ product.stock_quantity }} left</span>
+        {% endif %}
+    </a>
+    <div class="card-body">
+        <h3 class="card-title">
+            <a href="{{ url_for('shop.product_detail', product_id=product.id) }}">{{ product.name }}</a>
+        </h3>
+        <p class="muted small">
+            <a href="{{ url_for('shop.shop_detail', shop_id=product.shop_id) }}">{{ product.shop.name }}</a>
+            {% if product.category %}· {{ product.category.name }}{% endif %}
+        </p>
+        {{ stars(product.average_rating, product.review_count) }}
+        <div class="card-footer">
+            {{ price(product) }}
+            {{ card_add(product) }}
+        </div>
+    </div>
+</article>
+{% endmacro %}
+
+{# rating is (average, count) or none; distance is text like '2.4 km' or none #}
+{% macro shop_card(shop, product_count=0, rating=none, distance=none) %}
+<article class="card shop-card">
+    <a class="card-media card-media-wide" href="{{ url_for('shop.shop_detail', shop_id=shop.id) }}"
+       style="background: {{ shop_tint(shop) }}" aria-label="Visit {{ shop.name }}">
+        <span class="card-emoji" aria-hidden="true">🏪</span>
+    </a>
+    <div class="card-body">
+        <h3 class="card-title">
+            <a href="{{ url_for('shop.shop_detail', shop_id=shop.id) }}">{{ shop.name }}</a>
+        </h3>
+        <p class="muted small">{{ shop.description | truncate(80) if shop.description else 'Local shop' }}</p>
+        <ul class="meta-row">
+            {% if distance %}<li><span class="badge badge-green">📍 {{ distance }} away</span></li>{% endif %}
+            {% if rating %}<li>{{ stars(rating[0], rating[1]) }}</li>{% endif %}
+            <li>{{ '' if distance else '📍 ' }}{{ shop.address | truncate(38) }}</li>
+            <li>🛍️ {{ product_count }} product{{ '' if product_count == 1 else 's' }}</li>
+        </ul>
+    </div>
+</article>
+{% endmacro %}
+
+{% macro category_card(category, count=0) %}
+<a class="category-card" href="{{ url_for('shop.product_list', category=category.id) }}"
+   style="background: {{ category_style(category)[1] }}">
+    <span class="category-emoji" aria-hidden="true">{{ category_style(category)[0] }}</span>
+    <span class="category-name">{{ category.name }}</span>
+    <span class="muted small">{{ count }} item{{ '' if count == 1 else 's' }}</span>
+</a>
+{% endmacro %}
+
+{% macro empty_state(icon, title, text, url=None, label=None) %}
+<div class="empty-state">
+    <div class="empty-icon" aria-hidden="true">{{ icon }}</div>
+    <h2>{{ title }}</h2>
+    <p class="muted">{{ text }}</p>
+    {% if url %}<a href="{{ url }}" class="btn">{{ label }}</a>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro section_header(title, link_url=None, link_label=None) %}
+<div class="section-header">
+    <h2>{{ title }}</h2>
+    {% if link_url %}<a href="{{ link_url }}" class="link-more">{{ link_label }} →</a>{% endif %}
+</div>
+{% endmacro %}
+
+{# Badge for a real order status string such as "ready_for_pickup" #}
+{% macro order_badge(status) %}
+    <span class="badge status-{{ status }}">{{ status | status_label }}</span>
+{% endmacro %}
+
+{# Badge for a delivery status such as "picked_up" #}
+{% macro delivery_badge(status) %}
+    <span class="badge status-{{ status }}">{{ status | delivery_label }}</span>
+{% endmacro %}
+
+{# "Delivery partner: Name - status", shown on order pages once a partner is assigned #}
+{% macro delivery_panel(order) %}
+    {% if order.delivery and order.delivery.delivery_partner %}
+        <div class="delivery-panel">
+            <span aria-hidden="true">🚴</span>
+            <span>Delivery partner: <strong>{{ order.delivery.delivery_partner.name }}</strong></span>
+            {{ delivery_badge(order.delivery.status) }}
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{# Uploaded product photo, or a placeholder box when there is none (shopkeeper pages) #}
+{% macro product_thumb(product, size='sm') %}
+    {% if product.image %}
+        <img class="thumb thumb-{{ size }}" src="{{ url_for('static', filename='uploads/products/' ~ product.image) }}" alt="{{ product.name }}">
+    {% else %}
+        <span class="thumb thumb-{{ size }} thumb-empty" aria-hidden="true">📦</span>
+    {% endif %}
+{% endmacro %}
+
+{# Order progress bar. `current` is the index of the step the order is on;
+   a number equal to len(steps) means every step is finished. #}
+{% macro tracker(steps, current) %}
+    <ol class="tracker" aria-label="Order progress">
+        {% for label in steps %}
+            <li class="{{ 'done' if loop.index0 < current else ('current' if loop.index0 == current) }}">{{ label }}</li>
+        {% endfor %}
+    </ol>
+{% endmacro %}

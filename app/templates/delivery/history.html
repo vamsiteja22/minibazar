@@ -1,0 +1,32 @@
+{% extends "delivery/layout.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}Delivery History - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header">
+    <h1>Delivery history</h1>
+    <p class="muted">{{ deliveries | length }} completed deliver{{ 'y' if deliveries | length == 1 else 'ies' }}</p>
+</div>
+
+{% if deliveries %}
+<div class="table-wrap">
+    <table class="data-table">
+        <thead><tr><th>Delivered</th><th>Delivery</th><th>Order</th><th>Picked up from</th><th>Order total</th></tr></thead>
+        <tbody>
+        {% for d in deliveries %}
+            <tr>
+                <td>{{ d.delivered_at | local_time }}</td>
+                <td><a class="link-more" href="{{ url_for('delivery.task_detail', delivery_id=d.id) }}">#{{ d.id }}</a></td>
+                <td>#{{ d.order_id }}</td>
+                <td>{{ d.order.shop.name }}</td>
+                <td>{{ d.order.total_amount | inr }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    {{ empty_state("🧾", "No completed deliveries yet", "Finished deliveries will be listed here.", url_for('dashboard.delivery'), "Back to my deliveries") }}
+{% endif %}
+{% endblock %}

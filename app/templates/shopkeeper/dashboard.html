@@ -1,0 +1,78 @@
+{% extends "shopkeeper/layout.html" %}
+{% from "components/macros.html" import empty_state, order_badge, section_header %}
+
+{% block title %}Shopkeeper Dashboard - Mini Bazaar{% endblock %}
+
+{% block page %}
+{% if not shop %}
+    {{ empty_state("🏪", "Set up your shop", "Create your shop profile to start adding products and receiving orders.", url_for('shopkeeper.shop_create'), "Create my shop") }}
+{% else %}
+    <div class="page-header">
+        <h1>{{ shop.name }}</h1>
+        <p class="muted">
+            <span class="badge {{ {'approved': 'badge-green', 'pending': 'badge-muted', 'rejected': 'badge-danger'}[shop.approval_state] }}">{{ {'approved': 'Approved', 'pending': 'Awaiting approval', 'rejected': 'Rejected'}[shop.approval_state] }}</span>
+            Welcome back, {{ current_user.name.split()[0] }}.
+        </p>
+    </div>
+
+    <div class="stat-grid">
+        <a class="stat stat-link" href="{{ url_for('shopkeeper.products') }}"><span class="stat-number">{{ stats.total_products }}</span><span class="muted">Total products</span></a>
+        <a class="stat stat-link" href="{{ url_for('shopkeeper.products') }}"><span class="stat-number">{{ stats.available_products }}</span><span class="muted">Available products</span></a>
+        <a class="stat stat-link" href="{{ url_for('shopkeeper.orders', status='pending') }}"><span class="stat-number">{{ stats.pending_orders }}</span><span class="muted">Pending orders</span></a>
+        <a class="stat stat-link" href="{{ url_for('shopkeeper.orders', status='completed') }}"><span class="stat-number">{{ stats.completed_orders }}</span><span class="muted">Completed orders</span></a>
+    </div>
+
+    {% if low_stock.count %}
+    <section class="panel alert-panel" aria-label="Low stock alerts">
+        <div class="order-head">
+            <h2>⚠️ Low stock alert</h2>
+            <a class="btn btn-small" href="{{ url_for('shopkeeper.products', stock='low') }}">Restock now</a>
+        </div>
+        <ul class="mini-list">
+            {% for p in low_stock.out %}
+                <li><span>{{ p.name }}</span><span class="badge status-cancelled">Sold out</span></li>
+            {% endfor %}
+            {% for p in low_stock.low %}
+                <li><span>{{ p.name }}</span><span class="badge badge-warn">Only {{ p.stock_quantity }} left</span></li>
+            {% endfor %}
+        </ul>
+        <p class="muted small">Products with {{ low_threshold }} or fewer in stock.</p>
+    </section>
+    {% endif %}
+
+    <div class="two-col">
+        <section class="panel">
+            <h2>Recent orders</h2>
+            {% if recent_orders %}
+                <ul class="mini-list">
+                    {% for order in recent_orders %}
+                        <li>
+                            <a href="{{ url_for('shopkeeper.order_detail', order_id=order.id) }}">#{{ order.id }} · {{ order.customer.name }}</a>
+                            <span>{{ order_badge(order.status) }} <strong>{{ order.total_amount | inr }}</strong></span>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <a class="link-more" href="{{ url_for('shopkeeper.orders') }}">See all orders →</a>
+            {% else %}
+                <p class="muted">No orders yet. New orders will appear here.</p>
+            {% endif %}
+        </section>
+
+        <section class="panel">
+            <h2>Sales summary</h2>
+            <p class="stat-number">{{ stats.total_sales | inr }}</p>
+            <p class="muted small">Total from delivered orders</p>
+            {% if stats.top_products %}
+                <h3 class="spaced">Best sellers</h3>
+                <ul class="mini-list">
+                    {% for name, sold in stats.top_products %}
+                        <li><span>{{ name }}</span><span>{{ sold }} sold</span></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="muted">Best sellers show up after your first delivered order.</p>
+            {% endif %}
+        </section>
+    </div>
+{% endif %}
+{% endblock %}

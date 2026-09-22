@@ -1,0 +1,53 @@
+{% extends "admin/layout.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}Shop Approval - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header">
+    <h1>Shops</h1>
+    <p class="muted">A shop is visible to customers only after you approve it.</p>
+</div>
+
+<div class="chip-row" aria-label="Filter shops">
+    {% for key, label in filters.items() %}
+        <a class="chip {{ 'is-active' if key == active_state }}" href="{{ url_for('admin.shops', state=key) }}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if shops %}
+<ul class="product-rows">
+    {% for shop in shops %}
+    <li class="panel shop-row">
+        <div>
+            <strong>{{ shop.name }}</strong>
+            <span class="badge {{ {'approved': 'badge-green', 'pending': 'badge-muted', 'rejected': 'badge-danger'}[shop.approval_state] }}">
+                {{ {'approved': 'Approved', 'pending': 'Waiting for approval', 'rejected': 'Rejected'}[shop.approval_state] }}</span>
+            <p class="muted small">{{ shop.address }} · {{ shop.products | length }} product{{ '' if shop.products | length == 1 else 's' }}</p>
+            <p class="small">Owner: {{ shop.owner.name }} ({{ shop.owner.email }}){% if shop.phone %} · {{ shop.phone }}{% endif %}</p>
+            {% if shop.description %}<p class="small">{{ shop.description }}</p>{% endif %}
+            {% if shop.rejection_reason %}<p class="small line-problem">Reason given: {{ shop.rejection_reason }}</p>{% endif %}
+        </div>
+        <div class="row-actions">
+            {% if not shop.is_approved %}
+                <form method="post" action="{{ url_for('admin.shop_approve', shop_id=shop.id) }}" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="state" value="{{ active_state }}">
+                    <button type="submit" class="btn btn-small">Approve</button>
+                </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('admin.shop_reject', shop_id=shop.id) }}" class="quick-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="state" value="{{ active_state }}">
+                <label>{{ 'Change reason' if shop.approval_state == 'rejected' else ('Suspend' if shop.is_approved else 'Reject') }}
+                    <input name="reason" type="text" maxlength="255" placeholder="Reason for the shopkeeper" required style="width: 210px"></label>
+                <button type="submit" class="btn btn-small btn-danger">{{ 'Suspend' if shop.is_approved else 'Reject' }}</button>
+            </form>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+    {{ empty_state("🏪", "No shops here", "Nothing matches this filter right now.", url_for('admin.shops', state='all'), "Show all shops") }}
+{% endif %}
+{% endblock %}

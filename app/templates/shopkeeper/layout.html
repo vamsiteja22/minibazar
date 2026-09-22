@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{# Shared frame for every shopkeeper page: tab bar + approval notice. #}
+{% block content %}
+{% set shop = current_user.shop %}
+<nav class="seller-tabs" aria-label="Shop management">
+    <a href="{{ url_for('dashboard.shopkeeper') }}" class="{{ 'is-active' if request.endpoint == 'dashboard.shopkeeper' }}">📊 Dashboard</a>
+    {% if shop %}
+        <a href="{{ url_for('shopkeeper.shop_profile') }}" class="{{ 'is-active' if request.endpoint in ('shopkeeper.shop_profile', 'shopkeeper.shop_edit') }}">🏪 My shop</a>
+        <a href="{{ url_for('shopkeeper.products') }}" class="{{ 'is-active' if request.endpoint in ('shopkeeper.products', 'shopkeeper.product_edit') }}">📦 Products
+            {% if low_stock_count %}<span class="cart-badge badge-alert" title="Products running low">{{ low_stock_count }}</span>{% endif %}</a>
+        <a href="{{ url_for('shopkeeper.product_new') }}" class="{{ 'is-active' if request.endpoint == 'shopkeeper.product_new' }}">➕ Add product</a>
+        <a href="{{ url_for('shopkeeper.analytics') }}" class="{{ 'is-active' if request.endpoint == 'shopkeeper.analytics' }}">📈 Analytics</a>
+        <a href="{{ url_for('shopkeeper.orders') }}" class="{{ 'is-active' if request.endpoint in ('shopkeeper.orders', 'shopkeeper.order_detail') }}">🧾 Orders
+            {% if pending_orders %}<span class="cart-badge">{{ pending_orders }}</span>{% endif %}</a>
+    {% endif %}
+</nav>
+
+{% if shop and shop.approval_state == 'pending' %}
+    <div class="notice notice-warn">Your shop is waiting for admin approval. You can set everything up now - customers will see it once it is approved.</div>
+{% elif shop and shop.approval_state == 'rejected' %}
+    <div class="notice notice-danger"><strong>Your shop is not visible to customers.</strong> Reason: {{ shop.rejection_reason }}
+        <a href="{{ url_for('shopkeeper.shop_edit') }}">Update your shop details</a> and it will be reviewed again.</div>
+{% endif %}
+
+{% block page %}{% endblock %}
+{% endblock %}

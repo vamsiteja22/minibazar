@@ -1,0 +1,74 @@
+{% extends "shopkeeper/layout.html" %}
+{% from "components/macros.html" import order_badge, product_thumb, delivery_panel %}
+
+{% block title %}Order #{{ order.id }} - Mini Bazaar{% endblock %}
+
+{% block page %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('shopkeeper.orders') }}">Orders</a> / <span>#{{ order.id }}</span></nav>
+
+<div class="checkout-layout">
+    <section class="panel">
+        <div class="order-head">
+            <div>
+                <h1>Order #{{ order.id }}</h1>
+                <p class="muted small">Placed {{ order.created_at | local_time }}</p>
+            </div>
+            {{ order_badge(order.status) }}
+        </div>
+
+        {{ delivery_panel(order) }}
+
+        {% if step_index is not none %}
+            <ol class="tracker" aria-label="Order progress">
+                {% for label in steps %}
+                    <li class="{{ 'done' if loop.index0 < step_index else ('current' if loop.index0 == step_index) }}">{{ label }}</li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <p class="notice notice-warn">This order was {{ order.status | status_label | lower }}.</p>
+        {% endif %}
+
+        <h2>Items</h2>
+        <ul class="cart-list">
+            {% for item in order.items %}
+                <li class="line-item">
+                    {{ product_thumb(item.product) }}
+                    <div class="line-item-info">
+                        <strong>{{ item.product.name }}</strong>
+                        <p class="muted small">{{ item.price_at_purchase | inr }} each</p>
+                    </div>
+                    <span>× {{ item.quantity }}</span>
+                    <strong>{{ (item.price_at_purchase * item.quantity) | inr }}</strong>
+                </li>
+            {% endfor %}
+        </ul>
+        <dl class="summary-list">
+            <div><dt>Items</dt><dd>{{ subtotal | inr }}</dd></div>
+            <div><dt>Delivery fee</dt><dd>{{ 'Free' if delivery_fee == 0 else delivery_fee | inr }}</dd></div>
+            <div class="summary-total"><dt>Customer pays</dt><dd>{{ order.total_amount | inr }}</dd></div>
+        </dl>
+    </section>
+
+    <aside class="panel summary">
+        <h2>Customer</h2>
+        <dl class="detail-list">
+            <div><dt>Account</dt><dd>{{ order.customer.name }}</dd></div>
+            <div><dt>Deliver to</dt><dd class="multiline">{{ order.delivery_address }}</dd></div>
+            <div><dt>Payment</dt><dd>{{ order.payment_status | capitalize }}</dd></div>
+        </dl>
+
+        {% if actions %}
+            <h2>Update order</h2>
+            {% for action, label in actions %}
+                <form method="post" action="{{ url_for('shopkeeper.order_action', order_id=order.id, action=action) }}"
+                      {% if action == 'reject' %}data-confirm="Reject this order? The customer will be told it was declined."{% endif %}>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-block {{ 'btn-danger' if action == 'reject' else '' }}">{{ label }}</button>
+                </form>
+            {% endfor %}
+        {% else %}
+            <p class="muted small">No further action needed from you for this order.</p>
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}

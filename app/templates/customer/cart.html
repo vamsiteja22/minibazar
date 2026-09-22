@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import empty_state, product_thumb with context %}
+
+{% block title %}Your Cart - Mini Bazaar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Your cart</h1>
+    {% if not cart.is_empty %}
+        <p class="muted">
+            {{ cart.item_count }} item{{ '' if cart.item_count == 1 else 's' }} from
+            <a class="link-more" href="{{ url_for('shop.shop_detail', shop_id=cart.shop.id) }}">{{ cart.shop.name }}</a>
+            · each order is from one shop
+        </p>
+    {% endif %}
+</div>
+
+{% if cart.is_empty %}
+    {{ empty_state("🛒", "Your cart is empty", "Add something fresh from a local shop to get started.", url_for('shop.product_list'), "Start shopping") }}
+{% else %}
+<div class="checkout-layout">
+    <section class="panel" aria-label="Cart items">
+        <ul class="cart-list">
+            {% for line in cart.lines %}
+            {% set product = line.product %}
+            <li class="cart-row {{ 'has-problem' if line.problem }}">
+                <a class="cart-thumb" href="{{ url_for('shop.product_detail', product_id=product.id) }}"
+                   style="background: {{ category_style(product.category)[1] }}" aria-hidden="true" tabindex="-1">
+                    {% if product.image %}<img class="media-img" src="{{ url_for('static', filename='uploads/products/' ~ product.image) }}" alt="">{% else %}{{ category_style(product.category)[0] }}{% endif %}
+                </a>
+
+                <div class="cart-info">
+                    <a class="cart-name" href="{{ url_for('shop.product_detail', product_id=product.id) }}">{{ product.name }}</a>
+                    <p class="muted small">{{ product.price | inr }} each</p>
+                    {% if line.problem %}<p class="line-problem" role="alert">⚠ {{ line.problem }}</p>{% endif %}
+                    <form method="post" action="{{ url_for('customer.cart_remove', item_id=line.item.id) }}" class="inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="link-btn" aria-label="Remove {{ product.name }} from cart">Remove</button>
+                    </form>
+                </div>
+
+                <form method="post" action="{{ url_for('customer.cart_update', item_id=line.item.id) }}" class="qty-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label class="visually-hidden" for="qty-{{ line.item.id }}">Quantity of {{ product.name }}</label>
+                    <input id="qty-{{ line.item.id }}" name="quantity" type="number" min="1" max="{{ [product.stock_quantity, 99] | min if product.stock_quantity > 0 else 99 }}" value="{{ line.quantity }}" inputmode="numeric">
+                    <button type="submit" class="btn btn-small btn-outline">Update</button>
+                </form>
+
+                <strong class="cart-line-total">{{ line.line_total | inr }}</strong>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <aside class="panel summary" aria-label="Order summary">
+        <h2>Order summary</h2>
+        <dl class="summary-list">
+            <div><dt>Subtotal ({{ cart.item_count }} item{{ '' if cart.item_count == 1 else 's' }})</dt><dd>{{ cart.subtotal | inr }}</dd></div>
+            <div><dt>Delivery</dt><dd>{{ 'Free' if cart.delivery_fee == 0 else cart.delivery_fee | inr }}</dd></div>
+            <div class="summary-total"><dt>Total</dt><dd>{{ cart.total | inr }}</dd></div>
+        </dl>
+
+        {% if cart.delivery_fee == 0 %}
+            <p class="small free-hint is-good">🎉 You get free delivery!</p>
+        {% else %}
+            <p class="small free-hint muted">Add {{ cart.amount_for_free_delivery | inr }} more for free delivery.</p>
+        {% endif %}
+
+        {% if cart.has_problems %}
+            <p class="notice notice-warn">Fix the highlighted items to continue.</p>
+            <button class="btn btn-lg btn-block" type="button" disabled>Proceed to checkout</button>
+        {% else %}
+            <a href="{{ url_for('customer.checkout') }}" class="btn btn-lg btn-block">Proceed to checkout</a>
+        {% endif %}
+        <a href="{{ url_for('shop.shop_detail', shop_id=cart.shop.id) }}" class="btn btn-outline btn-block">Continue shopping</a>
+
+        <form method="post" action="{{ url_for('customer.cart_clear') }}" data-confirm="Remove everything from your cart?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="link-btn clear-btn">Clear cart</button>
+        </form>
+    </aside>
+</div>
+{% endif %}
+{% endblock %}

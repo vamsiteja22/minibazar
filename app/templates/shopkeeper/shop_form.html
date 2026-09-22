@@ -1,0 +1,51 @@
+{% extends "shopkeeper/layout.html" %}
+
+{% block title %}{{ 'Edit shop' if editing else 'Create your shop' }} - Mini Bazaar{% endblock %}
+
+{% block page %}
+<section class="panel narrow">
+    <h1>{{ 'Edit shop details' if editing else 'Create your shop' }}</h1>
+    <p class="muted">Customers see this information on your shop page.</p>
+
+    <form method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="field">
+            <label for="name">Shop name</label>
+            <input id="name" name="name" type="text" maxlength="120" value="{{ values.name or '' }}" required autofocus>
+        </div>
+        <div class="field">
+            <label for="address">Address</label>
+            <input id="address" name="address" type="text" maxlength="255" value="{{ values.address or '' }}" placeholder="Shop no., street, area" required>
+        </div>
+        <div class="field">
+            <label for="phone">Phone <span class="muted">(optional)</span></label>
+            <input id="phone" name="phone" type="tel" inputmode="numeric" value="{{ values.phone or '' }}" placeholder="10-digit mobile number">
+        </div>
+        <fieldset class="field location-field">
+            <legend>Shop location <span class="muted">(optional - lets nearby customers find you)</span></legend>
+            <div class="field-row">
+                <div>
+                    <label for="latitude">Latitude</label>
+                    <input id="latitude" name="latitude" type="text" inputmode="decimal" placeholder="e.g. 17.385044" value="{{ values.latitude if values.latitude is not none else '' }}">
+                </div>
+                <div>
+                    <label for="longitude">Longitude</label>
+                    <input id="longitude" name="longitude" type="text" inputmode="decimal" placeholder="e.g. 78.486671" value="{{ values.longitude if values.longitude is not none else '' }}">
+                </div>
+            </div>
+            <button type="button" class="btn btn-small btn-outline" data-geolocate data-lat="latitude" data-lng="longitude">📍 Use my current location</button>
+            <p class="small muted">Stand in your shop and press the button, or enter the coordinates yourself (you can copy them from a map). Leave both empty to remove the location.</p>
+        </fieldset>
+        <div class="field">
+            <label for="description">About your shop <span class="muted">(optional)</span></label>
+            <textarea id="description" name="description" rows="4" maxlength="500">{{ values.description or '' }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">{{ 'Save changes' if editing else 'Create shop' }}</button>
+            {% if editing %}<a href="{{ url_for('shopkeeper.shop_profile') }}" class="btn btn-outline">Cancel</a>{% endif %}
+        </div>
+    </form>
+</section>
+{% endblock %}

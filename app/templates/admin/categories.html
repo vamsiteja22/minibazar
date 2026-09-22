@@ -1,0 +1,50 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Categories - Mini Bazaar{% endblock %}
+
+{% block page %}
+<div class="page-header">
+    <h1>Categories</h1>
+    <p class="muted">Shopkeepers choose one of these for each product. A category that products use cannot be deleted.</p>
+</div>
+
+<section class="panel narrow">
+    <h2>Add a category</h2>
+    <form method="post" action="{{ url_for('admin.categories') }}" class="quick-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="grow">Name <input name="name" type="text" maxlength="80" required></label>
+        <button type="submit" class="btn">Add</button>
+    </form>
+</section>
+
+<div class="table-wrap spaced">
+    <table class="data-table">
+        <thead><tr><th>Category</th><th>Products</th><th>Rename</th><th></th></tr></thead>
+        <tbody>
+        {% for category, count in rows %}
+            <tr>
+                <td><strong>{{ category.name }}</strong></td>
+                <td>{{ count }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('admin.category_rename', category_id=category.id) }}" class="quick-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label class="visually-hidden" for="rename-{{ category.id }}">New name for {{ category.name }}</label>
+                        <input id="rename-{{ category.id }}" name="name" type="text" maxlength="80" value="{{ category.name }}" required>
+                        <button type="submit" class="btn btn-small btn-outline">Save</button>
+                    </form>
+                </td>
+                <td>
+                    <form method="post" action="{{ url_for('admin.category_delete', category_id=category.id) }}" class="inline-form"
+                          data-confirm="Delete the category “{{ category.name }}”?">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-small btn-danger" {{ 'disabled' if count }}>Delete</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4" class="muted">No categories yet. Add the first one above.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

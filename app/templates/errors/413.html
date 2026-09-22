@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% from "components/macros.html" import empty_state %}
+
+{% block title %}File Too Large - Mini Bazaar{% endblock %}
+
+{% block content %}
+{{ empty_state("📷", "That file is too large", "Uploads can be at most 3 MB. Please choose a smaller image and try again.", url_for('dashboard.index'), "Back to my dashboard") }}
+{% endblock %}

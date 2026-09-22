@@ -1,0 +1,73 @@
+{% extends "delivery/layout.html" %}
+{% from "components/macros.html" import delivery_badge, tracker, product_thumb %}
+
+{% block title %}Delivery #{{ delivery.id }} - Mini Bazaar{% endblock %}
+
+{% block page %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('dashboard.delivery') }}">My deliveries</a> / <span>#{{ delivery.id }}</span></nav>
+
+<div class="checkout-layout">
+    <section class="panel">
+        <div class="order-head">
+            <div>
+                <h1>Delivery #{{ delivery.id }}</h1>
+                <p class="muted small">Order #{{ order.id }} · assigned {{ delivery.assigned_at | local_time }}</p>
+            </div>
+            {{ delivery_badge(delivery.status) }}
+        </div>
+
+        {{ tracker(steps, step_index) }}
+
+        <div class="two-col spaced">
+            <div>
+                <h2>1 · Pick up from</h2>
+                <dl class="detail-list">
+                    <div><dt>Shop</dt><dd>{{ order.shop.name }}</dd></div>
+                    <div><dt>Address</dt><dd>{{ order.shop.address }}</dd></div>
+                    <div><dt>Phone</dt><dd>{{ order.shop.phone or 'Not listed' }}</dd></div>
+                </dl>
+            </div>
+            <div>
+                <h2>2 · Deliver to</h2>
+                <p class="multiline delivery-address">{{ order.delivery_address }}</p>
+            </div>
+        </div>
+
+        <h2 class="spaced">Items to collect</h2>
+        <ul class="cart-list">
+            {% for item in order.items %}
+                <li class="line-item line-item-plain">
+                    {{ product_thumb(item.product) }}
+                    <div class="line-item-info"><strong>{{ item.product.name }}</strong></div>
+                    <span>× {{ item.quantity }}</span>
+                    <span></span>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <aside class="panel summary">
+        <h2>Payment</h2>
+        {% if order.payment_status == 'pending' %}
+            <p class="stat-number">{{ order.total_amount | inr }}</p>
+            <p class="muted small">Cash on delivery: collect this amount from the customer.</p>
+        {% else %}
+            <p><span class="badge badge-green">Paid</span></p>
+            <p class="muted small">Nothing to collect.</p>
+        {% endif %}
+
+        {% if actions %}
+            <h2 class="spaced">Next step</h2>
+            {% for action, label, confirm in actions %}
+                <form method="post" action="{{ url_for('delivery.task_action', delivery_id=delivery.id, action=action) }}"
+                      {% if confirm %}data-confirm="{{ confirm }}"{% endif %}>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-lg btn-block">{{ label }}</button>
+                </form>
+            {% endfor %}
+        {% else %}
+            <p class="notice notice-info">Delivered {{ delivery.delivered_at | local_time }}. Thank you!</p>
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}

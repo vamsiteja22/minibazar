@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{# Shared frame for the delivery partner pages #}
+{% block content %}
+<nav class="seller-tabs" aria-label="Delivery">
+    <a href="{{ url_for('dashboard.delivery') }}" class="{{ 'is-active' if request.endpoint in ('dashboard.delivery', 'delivery.task_detail') }}">🚴 My deliveries
+        {% if todo_deliveries %}<span class="cart-badge">{{ todo_deliveries }}</span>{% endif %}</a>
+    <a href="{{ url_for('delivery.history') }}" class="{{ 'is-active' if request.endpoint == 'delivery.history' }}">🧾 History</a>
+</nav>
+{% block page %}{% endblock %}
+{% endblock %}
