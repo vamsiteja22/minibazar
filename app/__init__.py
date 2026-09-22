@@ -52,12 +52,8 @@ def create_app(config_class=None):
         try:
             if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
                 db.create_all()
-                from app.models.category import Category
-                if Category.query.first() is None:
-                    from app.cli import DEFAULT_CATEGORIES
-                    for name in DEFAULT_CATEGORIES:
-                        db.session.add(Category(name=name))
-                    db.session.commit()
+                from app.services import product_service
+                product_service.ensure_default_categories()
 
             from app.schema_upgrade import upgrade_schema
 
