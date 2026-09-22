@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 from flask import Flask, render_template
@@ -49,6 +50,15 @@ def create_app(config_class=None):
     # Bring an older database up to date (adds new columns only; never removes data).
     with app.app_context():
         try:
+            if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+                db.create_all()
+                from app.models.category import Category
+                if Category.query.first() is None:
+                    from app.cli import DEFAULT_CATEGORIES
+                    for name in DEFAULT_CATEGORIES:
+                        db.session.add(Category(name=name))
+                    db.session.commit()
+
             from app.schema_upgrade import upgrade_schema
 
             for column in upgrade_schema(db.engine):

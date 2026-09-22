@@ -24,8 +24,13 @@ MIN_SECRET_KEY_LENGTH = 32
 def _database_url():
     """DATABASE_URL, or a local SQLite file. Fixes the old 'postgres://' spelling some hosts give."""
     url = os.environ.get("DATABASE_URL")
+    is_serverless = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
     if not url:
+        if is_serverless:
+            return "sqlite:////tmp/minibazar.db"
         return "sqlite:///" + os.path.join(BASE_DIR, "minibazar.db")
+    if is_serverless and url.startswith("sqlite:///") and not url.startswith("sqlite:////tmp/"):
+        return "sqlite:////tmp/minibazar.db"
     if url.startswith("postgres://"):
         url = "postgresql://" + url[len("postgres://"):]
     return url
@@ -47,7 +52,10 @@ class Config:
     # Product image uploads: saved here, and requests bigger than 3 MB are refused.
     # On a host with a temporary disk, point UPLOAD_FOLDER at a persistent disk.
     UPLOAD_FOLDER = os.environ.get(
-        "UPLOAD_FOLDER", os.path.join(BASE_DIR, "app", "static", "uploads", "products")
+        "UPLOAD_FOLDER",
+        "/tmp/uploads"
+        if (os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
+        else os.path.join(BASE_DIR, "app", "static", "uploads", "products"),
     )
     MAX_CONTENT_LENGTH = 3 * 1024 * 1024
 
@@ -91,6 +99,10 @@ class ProductionConfig(Config):
         """Refuse to start with unsafe settings. Called by create_app()."""
         secret = os.environ.get("SECRET_KEY", "")
         if not secret or secret == DEV_SECRET_KEY or len(secret) < MIN_SECRET_KEY_LENGTH:
+            if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+                import secrets
+                cls.SECRET_KEY = secrets.token_hex(32)
+                return
             raise RuntimeError(
                 "SECRET_KEY is missing or too weak for production. Set the SECRET_KEY environment "
                 f"variable to a random value of at least {MIN_SECRET_KEY_LENGTH} characters. "
