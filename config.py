@@ -36,6 +36,17 @@ def _database_url():
     return url
 
 
+def _int_env(key, default):
+    """Safely parse integer environment variables."""
+    val = (os.environ.get(key) or "").strip()
+    if not val:
+        return default
+    try:
+        return int(val)
+    except ValueError:
+        return default
+
+
 class Config:
     """Settings shared by every environment."""
 
@@ -47,7 +58,7 @@ class Config:
     LOW_STOCK_THRESHOLD = 5
 
     # Times are stored in UTC and shown shifted by this many minutes (330 = India, UTC+5:30).
-    DISPLAY_TZ_OFFSET_MINUTES = int(os.environ.get("DISPLAY_TZ_OFFSET_MINUTES", "330"))
+    DISPLAY_TZ_OFFSET_MINUTES = _int_env("DISPLAY_TZ_OFFSET_MINUTES", 330)
 
     # Product image uploads: saved here, and requests bigger than 3 MB are refused.
     # On a host with a temporary disk, point UPLOAD_FOLDER at a persistent disk.
@@ -70,7 +81,7 @@ class Config:
 
     # How many reverse proxies (the host's web server) sit in front of the app.
     # Needed so the app sees the real visitor address and knows the site is on HTTPS.
-    TRUSTED_PROXIES = int(os.environ.get("TRUSTED_PROXIES", "0"))
+    TRUSTED_PROXIES = _int_env("TRUSTED_PROXIES", 0)
 
     # Set to True by ProductionConfig: adds the HSTS header and requires HTTPS cookies.
     HTTPS_ONLY = False
@@ -92,7 +103,7 @@ class ProductionConfig(Config):
     REMEMBER_COOKIE_SECURE = True
     REMEMBER_COOKIE_HTTPONLY = True
     PREFERRED_URL_SCHEME = "https"
-    TRUSTED_PROXIES = int(os.environ.get("TRUSTED_PROXIES", "1"))   # hosts like Render / PythonAnywhere
+    TRUSTED_PROXIES = _int_env("TRUSTED_PROXIES", 1)   # hosts like Render / PythonAnywhere
 
     @classmethod
     def validate(cls):
@@ -115,8 +126,26 @@ CONFIGS = {"development": DevelopmentConfig, "production": ProductionConfig}
 
 
 def get_config(name=None):
-    """The settings class for APP_ENV (or the given name). Unknown names are an error."""
-    name = (name or os.environ.get("APP_ENV", "development")).strip().lower()
-    if name not in CONFIGS:
-        raise RuntimeError(f"Unknown APP_ENV '{name}'. Use one of: {', '.join(CONFIGS)}.")
-    return CONFIGS[name]
+    """The settings class for APP_ENV (or the given name). Defaults to production on Vercel."""
+    raw = (name or os.environ.get("APP_ENV") or "").strip().lower()
+    if not raw:
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV") == "production":
+            raw = "production"
+        else:
+            raw = "development"
+
+    aliases = {
+        "prod": "production",
+        "production": "production",
+        "dev": "development",
+        "development": "development",
+        "preview": "production",
+        "test": "development",
+        "testing": "development",
+    }
+    key = aliases.get(raw, raw)
+    if key not in CONFIGS:
+        if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+            return ProductionConfig
+        raise RuntimeError(f"Unknown APP_ENV '{raw}'. Use one of: {', '.join(CONFIGS)}.")
+    return CONFIGS[key]
