@@ -2,9 +2,10 @@ import os
 import sys
 import traceback
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if BASE_DIR not in sys.path:
-    sys.path.insert(0, BASE_DIR)
+# Ensure project root is in sys.path so modules can be imported
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 
 try:
     from app import create_app
@@ -48,6 +49,3 @@ except Exception:
 </body>
 </html>"""
         return Response(html, status=500, mimetype="text/html")
-
-if __name__ == "__main__":
-    app.run()

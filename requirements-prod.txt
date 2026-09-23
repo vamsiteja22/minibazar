@@ -2,4 +2,4 @@
 -r requirements.txt
 gunicorn>=21.2        # production server for Linux hosts (Render, PythonAnywhere, VPS)
 waitress>=3.0         # production server that also works on Windows
-# psycopg2-binary>=2.9   # uncomment when DATABASE_URL points to PostgreSQL
+psycopg2-binary>=2.9   # PostgreSQL driver

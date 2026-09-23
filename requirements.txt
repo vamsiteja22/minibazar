@@ -4,3 +4,4 @@ python-dotenv>=1.0
 Flask-Migrate>=4.0
 Flask-Login>=0.6
 Flask-WTF>=1.2
+psycopg2-binary>=2.9

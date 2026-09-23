@@ -23,7 +23,7 @@ MIN_SECRET_KEY_LENGTH = 32
 
 def _database_url():
     """DATABASE_URL, or a local SQLite file. Fixes the old 'postgres://' spelling some hosts give."""
-    url = os.environ.get("DATABASE_URL")
+    url = (os.environ.get("DATABASE_URL") or "").strip()
     is_serverless = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
     if not url:
         if is_serverless:
